@@ -1,30 +1,50 @@
-import { supabase } from '../../lib/supabase';
-import Stripe from 'stripe';
-import { buffer } from 'micro';
+// pages/api/stripe-webhook.js
+import { buffer } from 'micro'
+import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
 
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: false } }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2022-11-15',
+})
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const buf = await buffer(req);
-    const sig = req.headers['stripe-signature'];
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+  const sig = req.headers['stripe-signature']
+  const buf = await buffer(req)
+  let event
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
-      const userId = session.metadata.userId;
-      await supabase.from('users').update({ has_paid: true }).eq('id', userId);
-    }
-    res.status(200).json({ received: true });
-  } else {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end('Method Not Allowed');
+  try {
+    event = stripe.webhooks.constructEvent(
+      buf,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    )
+  } catch (err) {
+    console.error('Webhook signature error:', err)
+    return res.status(400).end()
   }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object
+    let userId = session.metadata?.userId
+
+    // 1) Upsert user has_paid
+    await supabase
+      .from('users')
+      .upsert({ id: userId, has_paid: true }, { onConflict: 'id' })
+
+    // 2) Mark referral paid
+    await supabase
+      .from('referrals')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('referred_id', userId)
+      .eq('status', 'unpaid')
+  }
+
+  res.json({ received: true })
 }

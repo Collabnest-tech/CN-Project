@@ -1,5 +1,5 @@
-// pages/_app.js
 import '../styles/globals.css'
+import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -7,25 +7,25 @@ function MyApp({ Component, pageProps }) {
   const [session, setSession] = useState(null)
 
   useEffect(() => {
-    // 1) Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
-
-    // 2) Subscribe to future changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
-
-    // 3) Cleanup
-    return () => {
-      if (subscription) subscription.unsubscribe()
-    }
+    return () => subscription?.unsubscribe()
   }, [])
 
-  return <Component {...pageProps} supabase={supabase} session={session} />
+  return (
+    <>
+      <Head>
+        <title>www.collab-nest.com</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Collab-Nest: AI-powered online courses" />
+      </Head>
+      <Component {...pageProps} supabase={supabase} session={session} />
+    </>
+  )
 }
 
 export default MyApp

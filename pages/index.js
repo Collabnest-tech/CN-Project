@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { supabase } from '../lib/supabase'
 import CourseCard from '../components/CourseCard'
 import Quiz from '../components/Quiz'
+import { loadStripe } from '@stripe/stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 export default function Home({ courses }) {
   const [session, setSession] = useState(null)
@@ -69,52 +72,65 @@ export default function Home({ courses }) {
     )
   }
 
-  // Featured Module 1
   const featuredModuleId = 2  // replace with your actual Module 1 ID
+  const course = courses.find(c => c.id === featuredModuleId)
   const locked = !userPaid
 
-  const FeaturedModule = () => (
-    <section className="my-12 max-w-3xl mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold text-purple-700 mb-4">
-        Module 1: Introduction to Making Money Online with AI
-      </h2>
-      <video
-        className="w-full h-64 mb-4 bg-gray-200 rounded"
-        controls
-        poster="/module1-poster.png"
-      >
-        <source src="/module1.mp4" type="video/mp4" />
-        Your browser doesn’t support the video tag.
-      </video>
-      <div className="flex space-x-4 mb-8">
-        <Link href={locked ? '/checkout' : `/courses/${featuredModuleId}`}>
-          <a
-            className={`px-6 py-3 rounded text-white font-medium ${
-              locked
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            {locked ? 'Purchase Module 1' : 'Go to Module 1'}
-          </a>
-        </Link>
-      </div>
-      <div>
-        <h3 className="text-xl font-semibold text-purple-700 mb-2">
-          📝 Module 1 Quiz
-        </h3>
-        {locked ? (
-          <p className="text-gray-500">Unlock to take the quiz.</p>
-        ) : (
-          <Quiz moduleId={featuredModuleId} />
-        )}
-      </div>
-    </section>
-  )
+  async function handlePurchase() {
+    const stripe = await stripePromise
+    const res = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        priceId: course.price_id,
+        userId: session.user.id,
+      }),
+    })
+    const { sessionId } = await res.json()
+    stripe.redirectToCheckout({ sessionId })
+  }
 
   return (
     <div className="container mx-auto p-4">
-      <FeaturedModule />
+      <section className="my-12 max-w-3xl mx-auto p-6 bg-white rounded shadow">
+        <h2 className="text-2xl font-bold text-purple-700 mb-4">
+          Module 1: Introduction to Making Money Online with AI
+        </h2>
+        <video
+          className="w-full h-64 mb-4 bg-gray-200 rounded"
+          controls
+          poster="/module1-poster.png"
+        >
+          <source src="/module1.mp4" type="video/mp4" />
+          Your browser doesn’t support the video tag.
+        </video>
+        <div className="flex space-x-4 mb-8">
+          {locked ? (
+            <button
+              onClick={handlePurchase}
+              className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Purchase Module 1
+            </button>
+          ) : (
+            <Link href={`/courses/${featuredModuleId}`}>
+              <a className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700">
+                Go to Module 1
+              </a>
+            </Link>
+          )}
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold text-purple-700 mb-2">
+            📝 Module 1 Quiz
+          </h3>
+          {locked ? (
+            <p className="text-gray-500">Unlock to take the quiz.</p>
+          ) : (
+            <Quiz moduleId={featuredModuleId} />
+          )}
+        </div>
+      </section>
 
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-purple-700">
@@ -132,12 +148,8 @@ export default function Home({ courses }) {
         <p className="text-center text-gray-500">No courses available.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              hasPaid={userPaid}
-            />
+          {courses.map(course => (
+            <CourseCard key={course.id} course={course} hasPaid={userPaid} />
           ))}
         </div>
       )}
@@ -145,7 +157,6 @@ export default function Home({ courses }) {
   )
 }
 
-// Fetch courses at build time
 export async function getStaticProps() {
   const { data: courses } = await supabase
     .from('courses')
@@ -153,6 +164,7 @@ export async function getStaticProps() {
 
   return {
     props: { courses },
-    revalidate: 60, // regenerate every minute
+    revalidate: 60,
   }
 }
+

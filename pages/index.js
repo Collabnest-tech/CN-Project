@@ -6,10 +6,12 @@ import CourseCard from '../components/CourseCard'
 import Quiz from '../components/Quiz'
 import { loadStripe } from '@stripe/stripe-js'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+)
 
 export default function Home({ courses }) {
-  const [session, setSession] = useState(null)
+  const [session, setSession]   = useState(null)
   const [userPaid, setUserPaid] = useState(false)
 
   useEffect(() => {
@@ -21,15 +23,16 @@ export default function Home({ courses }) {
           .select('has_paid')
           .eq('id', session.user.id)
           .single()
-          .then(({ data }) => {
-            setUserPaid(data?.has_paid ?? false)
+          .then(({ data, error }) => {
+            if (error) console.error('Supabase error:', error)
+            else setUserPaid(data.has_paid)
           })
       }
     })
 
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setSession(session)
       if (session) {
         supabase
@@ -37,17 +40,16 @@ export default function Home({ courses }) {
           .select('has_paid')
           .eq('id', session.user.id)
           .single()
-          .then(({ data }) => {
-            setUserPaid(data?.has_paid ?? false)
+          .then(({ data, error }) => {
+            if (error) console.error('Supabase error:', error)
+            else setUserPaid(data.has_paid)
           })
       } else {
         setUserPaid(false)
       }
     })
 
-    return () => {
-      subscription?.unsubscribe()
-    }
+    return () => subscription?.unsubscribe()
   }, [])
 
   if (!session) {
@@ -72,20 +74,30 @@ export default function Home({ courses }) {
     )
   }
 
-  const featuredModuleId = 2  // replace with your actual Module 1 ID
-  const course = courses.find(c => c.id === featuredModuleId)
-  const locked = !userPaid
+  // === pick your course record, not module ID ===
+  const courseId         = 1                  // your course's actual ID
+  const featuredModuleId = 2                  // the module ID
+  const course           = courses.find(c => c.id === courseId)
+  const locked           = !userPaid
 
   async function handlePurchase() {
+    if (!course) {
+      console.error('Course not found:', courseId)
+      return
+    }
     const stripe = await stripePromise
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         priceId: course.price_id,
-        userId: session.user.id,
+        userId:  session.user.id,
       }),
     })
+    if (!res.ok) {
+      console.error('Checkout session error:', await res.text())
+      return
+    }
     const { sessionId } = await res.json()
     stripe.redirectToCheckout({ sessionId })
   }
@@ -148,8 +160,8 @@ export default function Home({ courses }) {
         <p className="text-center text-gray-500">No courses available.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {courses.map(course => (
-            <CourseCard key={course.id} course={course} hasPaid={userPaid} />
+          {courses.map(c => (
+            <CourseCard key={c.id} course={c} hasPaid={userPaid} />
           ))}
         </div>
       )}
@@ -167,4 +179,5 @@ export async function getStaticProps() {
     revalidate: 60,
   }
 }
+
 

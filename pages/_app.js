@@ -7,25 +7,25 @@ function MyApp({ Component, pageProps }) {
   const [session, setSession] = useState(null)
 
   useEffect(() => {
-    // Get initial session
+    // 1) Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
-    // Listen for changes
-    const { subscription } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session)
-      }
-    )
+
+    // 2) Subscribe to future changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    // 3) Cleanup
     return () => {
-      subscription.unsubscribe()
+      if (subscription) subscription.unsubscribe()
     }
   }, [])
 
-  return (
-    // Pass both the raw client and current session down
-    <Component {...pageProps} supabase={supabase} session={session} />
-  )
+  return <Component {...pageProps} supabase={supabase} session={session} />
 }
 
 export default MyApp

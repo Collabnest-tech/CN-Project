@@ -17,8 +17,8 @@ export default async function handler(req, res) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { userId },
-      success_url: `${req.headers.origin}/?success=1`,
-      cancel_url:  `${req.headers.origin}/?canceled=1`,
+      success_url: `${req.headers.origin}/dashboard?success=1`,
+      cancel_url:  `${req.headers.origin}/dashboard?canceled=1`,
     })
     res.status(200).json({ sessionId: session.id })
   } catch (err) {

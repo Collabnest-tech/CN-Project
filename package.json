@@ -16,7 +16,8 @@
     "next": "latest",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "stripe": "^11.18.0"
+    "stripe": "^11.18.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.11.6",

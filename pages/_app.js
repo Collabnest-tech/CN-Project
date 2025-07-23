@@ -8,7 +8,7 @@ function MyApp({ Component, pageProps }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
+      if (session && session.user && session.user.confirmed_at) {
         const u = session.user
         // upsert so we don't duplicate
         await supabase

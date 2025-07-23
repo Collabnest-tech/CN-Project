@@ -2,6 +2,7 @@ import '../styles/globals.css'
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import DropdownNavbar from '../components/DropdownNavbar'
 
 function MyApp({ Component, pageProps }) {
   const [session, setSession] = useState(null)
@@ -23,7 +24,12 @@ function MyApp({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Collab-Nest: AI-powered online courses" />
       </Head>
-      <Component {...pageProps} supabase={supabase} session={session} />
+      <div className="flex min-h-screen bg-gray-100">
+        <DropdownNavbar />
+        <div className="flex-1">
+          <Component {...pageProps} supabase={supabase} session={session} />
+        </div>
+      </div>
     </>
   )
 }

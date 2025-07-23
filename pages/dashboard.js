@@ -6,15 +6,21 @@ import { supabase } from '../lib/supabase'
 export default function Dashboard() {
   const router = useRouter()
   const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.replace('/login')
-      else setSession(session)
+      if (!session) {
+        router.replace('/login')
+      } else {
+        setSession(session)
+        setLoading(false)
+      }
     })
   }, [router])
 
-  if (!session) return <div className="p-8 text-center">Loading...</div>
+  if (loading) return <div className="p-8 text-center">Loading...</div>
+  if (!session) return null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

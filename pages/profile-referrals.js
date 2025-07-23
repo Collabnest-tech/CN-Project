@@ -8,42 +8,24 @@ export default function ProfileReferrals() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session) fetchData(session.user.id)
-      else setLoading(false)
-    })
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSession(session)
-      if (session) fetchData(session.user.id)
-      else {
-        setProfile(null)
-        setReferrals([])
-        setLoading(false)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        window.location.href = '/login'
+        return
       }
+      setSession(session)
+      // Fetch profile
+      const { data: profileData } = await supabase.from('users').select('id, email, full_name, created_at').eq('id', session.user.id).single()
+      setProfile(profileData)
+      // Fetch referrals
+      const { data: referralData } = await supabase.from('referrals').select('id, referred_email, created_at').eq('referrer_id', session.user.id)
+      setReferrals(referralData || [])
+      setLoading(false)
     })
-    return () => subscription?.unsubscribe()
-    // eslint-disable-next-line
   }, [])
 
-  async function fetchData(userId) {
-    setLoading(true)
-    // Fetch profile
-    const { data: profileData } = await supabase.from('users').select('id, email, full_name, created_at').eq('id', userId).single()
-    setProfile(profileData)
-    // Fetch referrals (assuming 'referrals' table with 'referrer_id' and 'referred_email')
-    const { data: referralData } = await supabase.from('referrals').select('id, referred_email, created_at').eq('referrer_id', userId)
-    setReferrals(referralData || [])
-    setLoading(false)
-  }
-
   if (loading) return <div className="p-8 text-center">Loading...</div>
-  if (!session) return (
-    <div className="p-8 text-center">
-      <p>Please log in to view your profile and referrals.</p>
-    </div>
-  )
+  if (!session) return null
 
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white rounded shadow mt-8">

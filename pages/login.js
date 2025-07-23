@@ -13,7 +13,7 @@ export default function Login() {
   // If already logged in, send straight to dashboard
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard')
+      if (session) router.replace('/')
     })
   }, [router])
 
@@ -30,8 +30,8 @@ export default function Login() {
     if (loginError) {
       setError(loginError.message)
     } else {
-      // On success, redirect to dashboard
-      router.replace('/dashboard')
+      // On success, redirect to homepage
+      router.replace('/')
     }
   }
 

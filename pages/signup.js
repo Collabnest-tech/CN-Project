@@ -12,7 +12,7 @@ export default function Signup() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard')
+      if (session) router.replace('/')
     })
   }, [router])
 
@@ -25,7 +25,7 @@ export default function Signup() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`
+        emailRedirectTo: `${window.location.origin}/`
       }
     })
     setLoading(false)

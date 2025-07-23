@@ -10,6 +10,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 export default function Home({ courses }) {
   const [session, setSession]   = useState(null)
   const [userPaid, setUserPaid] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -60,36 +61,64 @@ export default function Home({ courses }) {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <section className="my-12 max-w-3xl mx-auto p-6 bg-white rounded shadow">
-        <h2 className="text-2xl font-bold text-purple-700 mb-4">Module 1: Introduction to Making Money Online with AI</h2>
-        <video className="w-full h-64 mb-4 bg-gray-200 rounded" controls poster="/module1-poster.png">
-          <source src="/module1.mp4" type="video/mp4" />
-          Your browser doesn’t support the video tag.
-        </video>
-        <div className="flex space-x-4 mb-8">
-          {locked ? (
-            <button onClick={handlePurchase} className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700">
-              Purchase Module 1
-            </button>
-          ) : (
-            <Link href={`/courses/${featuredModuleId}`}><a className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700">Go to Module 1</a></Link>
-          )}
-        </div>
-        <div>
-          <h3 className="text-xl font-semibold text-purple-700 mb-2">📝 Module 1 Quiz</h3>
-          {locked ? <p className="text-gray-500">Unlock to take the quiz.</p> : <Quiz moduleId={featuredModuleId} />}
-        </div>
-      </section>
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-purple-700">Available Courses</h1>
-        <button onClick={() => supabase.auth.signOut()} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Sign Out</button>
-      </header>
-      {courses.length === 0 ? <p className="text-center text-gray-500">No courses available.</p> : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {courses.map(c => <CourseCard key={c.id} course={c} hasPaid={userPaid} />)}
-        </div>
-      )}
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Dropdown Nav Bar */}
+      <div className="relative">
+        <button
+          className="m-4 px-4 py-2 bg-purple-700 text-white rounded shadow hover:bg-purple-800"
+          onClick={() => setNavOpen(!navOpen)}
+        >
+          {navOpen ? 'Close Menu' : 'Open Menu'}
+        </button>
+        {navOpen && (
+          <nav className="absolute left-4 top-16 w-56 bg-white shadow-lg flex flex-col py-8 px-4 space-y-4 z-50 rounded">
+            <Link href="/dashboard">
+              <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Dashboard</a>
+            </Link>
+            <Link href="/">
+              <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Courses</a>
+            </Link>
+            <Link href="/profile">
+              <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">My Profile</a>
+            </Link>
+            <Link href="/referrals">
+              <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Referrals</a>
+            </Link>
+          </nav>
+        )}
+      </div>
+      {/* Main Content */}
+      <main className="flex-1">
+        <section className="my-12 max-w-3xl mx-auto p-6 bg-white rounded shadow">
+          <h2 className="text-2xl font-bold text-purple-700 mb-4">Module 1: Introduction to Making Money Online with AI</h2>
+          <video className="w-full h-64 mb-4 bg-gray-200 rounded" controls poster="/module1-poster.png">
+            <source src="/module1.mp4" type="video/mp4" />
+            Your browser doesn’t support the video tag.
+          </video>
+          <div className="flex space-x-4 mb-8">
+            {locked ? (
+              <button onClick={handlePurchase} className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700">
+                Purchase Module 1
+              </button>
+            ) : (
+              <Link href={`/courses/${featuredModuleId}`}><a className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700">Go to Module 1</a></Link>
+            )}
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-purple-700 mb-2">📝 Module 1 Quiz</h3>
+            {locked ? <p className="text-gray-500">Unlock to take the quiz.</p> : <Quiz moduleId={featuredModuleId} />}
+          </div>
+        </section>
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-purple-700">Available Courses</h1>
+          <button onClick={() => supabase.auth.signOut()} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Sign Out</button>
+        </header>
+        {courses.length === 0 ? <p className="text-center text-gray-500">No courses available.</p> : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {courses.map(c => <CourseCard key={c.id} course={c} hasPaid={userPaid} />)}
+          </div>
+        )}
+      </main>
     </div>
   )
 }

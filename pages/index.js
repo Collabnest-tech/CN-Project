@@ -86,8 +86,8 @@ export default function Home({ courses }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10 relative">
-      {/* Logo top right */}
-      <div className="absolute top-6 right-8 z-10">
+      {/* Logo top left */}
+      <div className="absolute top-6 left-8 z-10">
         <Image
           src="/logo.jpeg"
           alt="Collab-Nest Logo"

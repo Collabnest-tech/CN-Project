@@ -12,28 +12,31 @@ export default function DropdownNavbar({ session }) {
   }
 
   return (
-    <div className="relative">
-      {/* Logo top left */}
-      <div className="absolute top-4 left-4 z-20">
-        <Image
-          src="/logo.jpeg"
-          alt="Collab-Nest Logo"
-          width={48}
-          height={48}
-          className="rounded-full shadow-lg"
-        />
-      </div>
+    <>
+      {/* Menu Button Top Right */}
       <button
-        className="m-4 ml-20 px-4 py-2 bg-purple-700 text-white rounded shadow hover:bg-purple-800 z-30"
+        className="fixed top-4 right-4 px-4 py-2 bg-purple-700 text-white rounded shadow hover:bg-purple-800 z-[100]"
         onClick={() => setOpen(!open)}
+        style={{ transition: 'background 0.2s' }}
       >
         {open ? 'Close Menu' : 'Open Menu'}
       </button>
+      {/* Overlay Side Nav */}
       {open && (
-        <nav className="fixed top-0 left-0 w-full sm:w-64 h-full bg-white shadow-lg flex flex-col py-8 px-4 space-y-4 z-50 rounded transition-all">
+        <nav className="fixed top-16 right-4 w-64 bg-white shadow-lg flex flex-col py-6 px-4 space-y-4 z-[101] rounded-xl transition-all">
+          <div className="flex items-center mb-4">
+            <Image
+              src="/logo.jpeg"
+              alt="Collab-Nest Logo"
+              width={40}
+              height={40}
+              className="rounded-full shadow-lg"
+            />
+            <span className="ml-3 text-lg font-bold text-purple-700">Collab-Nest</span>
+          </div>
           <Link href="/">
             <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Home</a>
-          </Link>          
+          </Link>
           <Link href="/courses">
             <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Courses</a>
           </Link>
@@ -60,6 +63,6 @@ export default function DropdownNavbar({ session }) {
           )}
         </nav>
       )}
-    </div>
+    </>
   )
 }

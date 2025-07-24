@@ -40,11 +40,11 @@ export default function Courses() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <h1 className="text-3xl font-bold text-purple-700 mb-8 text-center">Courses</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-100 py-6 px-2 md:py-10 md:px-4">
+      <h1 className="text-2xl md:text-3xl font-bold text-purple-700 mb-6 md:mb-8 text-center">Courses</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
         {/* Course 1 */}
-        <div className="bg-white rounded shadow p-6 flex flex-col">
+        <div className="bg-white rounded shadow p-4 md:p-6 flex flex-col">
           <h2 className="text-2xl font-bold text-purple-700 mb-2">Using AI to Make Money Online</h2>
           <p className="mb-4 text-gray-700">A step-by-step course on leveraging AI tools for online income.</p>
           <div className="grid grid-cols-2 gap-4 mb-6">

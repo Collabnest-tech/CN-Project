@@ -30,7 +30,7 @@ export default function DropdownNavbar({ session }) {
         {open ? 'Close Menu' : 'Open Menu'}
       </button>
       {open && (
-        <nav className="fixed top-0 left-0 w-64 h-full bg-white shadow-lg flex flex-col py-8 px-4 space-y-4 z-50 rounded transition-all">
+        <nav className="fixed top-0 left-0 w-full sm:w-64 h-full bg-white shadow-lg flex flex-col py-8 px-4 space-y-4 z-50 rounded transition-all">
           <Link href="/">
             <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Home</a>
           </Link>          

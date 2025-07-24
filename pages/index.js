@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase } from '../lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
+import { useSwipeable } from 'react-swipeable'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
@@ -77,6 +78,12 @@ export default function Home({ courses }) {
     window.location.href = '/login'
   }
 
+  const handlers = useSwipeable({
+    onSwipedLeft: () => setCurrent((current + 1) % carouselItems.length),
+    onSwipedRight: () => setCurrent((current - 1 + carouselItems.length) % carouselItems.length),
+    trackMouse: true
+  })
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10 relative">
       {/* Logo top right */}
@@ -102,7 +109,10 @@ export default function Home({ courses }) {
 
       {/* Carousel */}
       <div className="max-w-2xl mx-auto mb-12">
-        <div className="relative bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
+        <div
+          {...handlers}
+          className="relative bg-[#181e29] rounded-xl shadow-lg p-4 md:p-6 flex flex-col items-center"
+        >
           <Image
             src={carouselItems[current].img}
             alt={carouselItems[current].title}

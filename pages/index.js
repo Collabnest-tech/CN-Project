@@ -31,11 +31,60 @@ export default function Home({ courses }) {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-        <h1 className="text-3xl font-bold mb-6 text-purple-700">Welcome to CollabNest Courses</h1>
-        <div className="space-x-4">
-          <Link href="/signup"><a className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700">Sign Up</a></Link>
-          <Link href="/login"><a className="px-6 py-3 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Log In</a></Link>
+      <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
+        <div className="max-w-4xl mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white drop-shadow-lg">
+              Make Money Online<br />with AI
+            </h1>
+            <p className="text-lg md:text-xl text-blue-200 mb-2 font-medium">
+              Master ChatGPT, MidJourney &amp; 6 more tools
+            </p>
+          </div>
+
+          {/* Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
+              <h2 className="text-lg font-bold mb-2 text-white">About Us</h2>
+              <p className="text-blue-100 text-center">
+                We&apos;re help you build online income by leveraging artificial intelligence.
+              </p>
+            </div>
+            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
+              <h2 className="text-lg font-bold mb-2 text-white">What You&apos;ll Learn</h2>
+              <div className="flex flex-wrap justify-center gap-3 mt-2">
+                {/* Example icons, replace with your own */}
+                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">ChatGPT</span>
+                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">MidJourney</span>
+                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Automation</span>
+                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Content</span>
+                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Marketing</span>
+              </div>
+            </div>
+            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
+              <h2 className="text-lg font-bold mb-2 text-white">Outcomes</h2>
+              <ul className="text-blue-100 text-center space-y-1">
+                <li>Earn freelancing</li>
+                <li>Content creation</li>
+                <li>Online business</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="flex justify-center gap-6 mt-8">
+            <Link href="/signup">
+              <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
+                Sign Up
+              </a>
+            </Link>
+            <Link href="/login">
+              <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
+                Log In
+              </a>
+            </Link>
+          </div>
         </div>
       </div>
     )

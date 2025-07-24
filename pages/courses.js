@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '../lib/supabase';
-import Link from 'next/link';
-import { loadStripe } from '@stripe/stripe-js';
+import Link from 'next/link'
+import { useState } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 function ModuleCard({ moduleNumber, title, locked }) {
   return (
@@ -23,50 +21,22 @@ function ModuleCard({ moduleNumber, title, locked }) {
 }
 
 export default function Courses() {
-  const router = useRouter();
-  const [session, setSession] = useState(null);
-  const [paid, setPaid] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [paid, setPaid] = useState(false) // Replace with real payment logic
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        router.replace('/login');
-        return;
-      }
-      setSession(session);
-      // Fetch payment status from users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('has_paid')
-        .eq('id', session.user.id)
-        .single();
-      setPaid(!!data?.has_paid);
-      setLoading(false);
-    });
-  }, [router]);
-
-  async function handleBuyNow() {
-    if (!session) return;
-    const stripe = await stripePromise;
-    // Example: use a static priceId or get from your course data
-    const priceId = "your_stripe_price_id";
+  async function handleStripeCheckout() {
+    const stripe = await stripePromise
+    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId, userId: session.user.id })
-    });
-    if (!res.ok) { console.error(await res.text()); return; }
-    const { sessionId } = await res.json();
-    stripe.redirectToCheckout({ sessionId });
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <span className="text-purple-700 text-lg">Loading...</span>
-      </div>
-    );
+      body: JSON.stringify({ priceId })
+    })
+    if (!res.ok) {
+      alert('Failed to start checkout.')
+      return
+    }
+    const { sessionId } = await res.json()
+    stripe.redirectToCheckout({ sessionId })
   }
 
   return (
@@ -89,7 +59,7 @@ export default function Courses() {
           </div>
           {!paid && (
             <button
-              onClick={handlePurchase}
+              onClick={handleStripeCheckout}
               className="mb-6 px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
             >
               Purchase Full Course
@@ -129,15 +99,8 @@ export default function Courses() {
           </div>
         </div>
       </div>
-      {/* Buy Now Button */}
-      <div className="flex justify-center mt-12">
-        <button
-          onClick={handleBuyNow}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition"
-        >
-          Buy Now
-        </button>
-      </div>
     </div>
   )
 }
+
+

@@ -143,30 +143,6 @@ export default function Home({ courses }) {
           </div>
         ))}
       </div>
-
-      {/* Auth Buttons or Sign Out */}
-      <div className="flex justify-center gap-6 mt-8">
-        {!session ? (
-          <>
-            <Link href="/signup">
-              <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
-                Sign Up
-              </a>
-            </Link>
-            <Link href="/login">
-              <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
-                Log In
-              </a>
-            </Link>
-          </>
-        ) : (
-          <button
-            onClick={handleSignOut}
-            className="px-8 py-3 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl shadow transition"
-          >
-            Sign Out
-          </button>
-        )}
       </div>
     </div>
   )

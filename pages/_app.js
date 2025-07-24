@@ -21,14 +21,14 @@ function MyApp({ Component, pageProps }) {
     <>
       <Head>
         <title>www.collab-nest.com</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#10151c" />
         <meta name="description" content="Collab-Nest: AI-powered online courses" />
       </Head>
-      <div className="flex min-h-screen bg-gray-100">
-        <DropdownNavbar />
-        <div className="flex-1">
-          <Component {...pageProps} supabase={supabase} session={session} />
-        </div>
+      {/* Remove flex row layout */}
+      <DropdownNavbar session={session} />
+      <div>
+        <Component {...pageProps} supabase={supabase} session={session} />
       </div>
     </>
   )

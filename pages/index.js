@@ -137,17 +137,13 @@ export default function Home({ courses }) {
             <h3 className="text-lg font-bold mb-2 text-white">{course.name}</h3>
             <span className={`mt-2 px-4 py-1 rounded-full text-sm font-semibold ${
               course.unlocked ? 'bg-green-600 text-white' : 'bg-gray-700 text-blue-200'
-            }`}>            className={`rounded-xl shadow-lg p-6 flex flex-col items-center ${
-              course.unlocked ? 'bg-[#181e29]' : 'bg-[#232a39] opacity-60'
-            }`}
-            // ^ This line is correct, but if you accidentally added a $ at the end, it will break!
+            }`}>
               {course.unlocked ? 'Unlocked' : 'Purchase to Unlock'}
             </span>
           </div>
         ))}
       </div>
       </div>
-    </div>
   )
 }
 

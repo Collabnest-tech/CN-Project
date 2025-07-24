@@ -60,9 +60,9 @@ export default function Courses() {
           {!paid && (
             <button
               onClick={handleStripeCheckout}
-              className="mb-6 px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
+              className="mb-6 px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold transition"
             >
-              Purchase Full Course
+              Buy Now
             </button>
           )}
           {/* Learning Flow Diagram */}

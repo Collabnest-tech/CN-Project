@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import CourseCard from '../components/CourseCard'
 import Quiz from '../components/Quiz'
 import { loadStripe } from '@stripe/stripe-js'
+import Image from 'next/image'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
@@ -108,37 +109,115 @@ export default function Home({ courses }) {
     stripe.redirectToCheckout({ sessionId })
   }
 
+  // Carousel data (update image paths as needed)
+  const carouselItems = [
+    {
+      title: "ChatGPT for Beginners",
+      description: "Start your AI journey with ChatGPT basics.",
+      img: "/carousel1.jpg"
+    },
+    {
+      title: "Advanced ChatGPT Techniques",
+      description: "Unlock advanced prompts and workflows.",
+      img: "/carousel2.jpg"
+    },
+    {
+      title: "MidJourney Mastery",
+      description: "Create stunning visuals with AI.",
+      img: "/carousel3.jpg"
+    }
+  ]
+  const [current, setCurrent] = useState(0)
+
+  // Example course summary
+  const courseSummary = [
+    { name: "ChatGPT for Beginners", unlocked: true },
+    { name: "Advanced ChatGPT Techniques", unlocked: true },
+    { name: "Introduction to MidJourney", unlocked: false },
+    { name: "Automating Tasks with AI", unlocked: false },
+    { name: "AI-Driven Marketing", unlocked: false }
+  ]
+
   return (
-    <div className="container mx-auto p-4">
-      <section className="my-12 max-w-3xl mx-auto p-6 bg-white rounded shadow">
-        <h2 className="text-2xl font-bold text-purple-700 mb-4">Module 1: Introduction to Making Money Online with AI</h2>
-        <video className="w-full h-64 mb-4 bg-gray-200 rounded" controls poster="/module1-poster.png">
-          <source src="/module1.mp4" type="video/mp4" />
-          Your browser doesn’t support the video tag.
-        </video>
-        <div className="flex space-x-4 mb-8">
-          {locked ? (
-            <button onClick={handlePurchase} className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700">
-              Purchase Module 1
-            </button>
-          ) : (
-            <Link href={`/courses/${featuredModuleId}`}><a className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700">Go to Module 1</a></Link>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10 relative">
+      {/* Logo top right */}
+      <div className="absolute top-6 right-8 z-10">
+        <Image
+          src="/logo.jpeg"
+          alt="Collab-Nest Logo"
+          width={90}
+          height={90}
+          className="rounded-full shadow-lg"
+        />
+      </div>
+
+      {/* Title */}
+      <div className="max-w-4xl mx-auto text-center mb-10">
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white drop-shadow-lg">
+          Make Money Online<br />with AI
+        </h1>
+        <p className="text-lg md:text-xl text-blue-200 mb-2 font-medium">
+          Master ChatGPT, MidJourney &amp; more tools
+        </p>
+      </div>
+
+      {/* Carousel */}
+      <div className="max-w-2xl mx-auto mb-12">
+        <div className="relative bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
+          <Image
+            src={carouselItems[current].img}
+            alt={carouselItems[current].title}
+            width={320}
+            height={180}
+            className="rounded mb-4 object-cover"
+          />
+          <h2 className="text-xl font-bold mb-2 text-white">{carouselItems[current].title}</h2>
+          <p className="text-blue-100 text-center mb-2">{carouselItems[current].description}</p>
+          <div className="flex justify-center gap-2 mt-2">
+            {carouselItems.map((_, idx) => (
+              <button
+                key={idx}
+                className={`w-3 h-3 rounded-full ${current === idx ? 'bg-blue-400' : 'bg-gray-500'}`}
+                onClick={() => setCurrent(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
-        <div>
-          <h3 className="text-xl font-semibold text-purple-700 mb-2">📝 Module 1 Quiz</h3>
-          {locked ? <p className="text-gray-500">Unlock to take the quiz.</p> : <Quiz moduleId={featuredModuleId} />}
-        </div>
-      </section>
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-purple-700">Available Courses</h1>
-        <button onClick={() => supabase.auth.signOut()} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Sign Out</button>
-      </header>
-      {courses.length === 0 ? <p className="text-center text-gray-500">No courses available.</p> : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {courses.map(c => <CourseCard key={c.id} course={c} hasPaid={userPaid} />)}
-        </div>
-      )}
+      </div>
+
+      {/* Course Summary */}
+      <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {courseSummary.map((course, idx) => (
+          <div
+            key={course.name}
+            className={`rounded-xl shadow-lg p-6 flex flex-col items-center ${
+              course.unlocked ? 'bg-[#181e29]' : 'bg-[#232a39] opacity-60'
+            }`}
+          >
+            <h3 className="text-lg font-bold mb-2 text-white">{course.name}</h3>
+            <span className={`mt-2 px-4 py-1 rounded-full text-sm font-semibold ${
+              course.unlocked ? 'bg-green-600 text-white' : 'bg-gray-700 text-blue-200'
+            }`}>
+              {course.unlocked ? 'Unlocked' : 'Purchase to Unlock'}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Auth Buttons (only if not already globally integrated) */}
+      <div className="flex justify-center gap-6 mt-8">
+        <Link href="/signup">
+          <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
+            Sign Up
+          </a>
+        </Link>
+        <Link href="/login">
+          <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
+            Log In
+          </a>
+        </Link>
+      </div>
     </div>
   )
 }

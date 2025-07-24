@@ -71,7 +71,7 @@ export default function Courses() {
           </div>
           {!paid && (
             <button
-              onClick={() => alert('Integrate payment logic here!')}
+              onClick={handlePurchase}
               className="mb-6 px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
             >
               Purchase Full Course

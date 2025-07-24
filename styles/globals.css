@@ -3,3 +3,76 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global style inspired by the homepage aesthetic */
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #10151c 0%, #1a2230 50%, #232a39 100%);
+  color: #fff;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+}
+
+a {
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #2563eb;
+}
+
+button {
+  font-family: inherit;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  background: #181e29;
+  color: #fff;
+  border: 1px solid #232a39;
+  border-radius: 8px;
+  padding: 0.5em 1em;
+}
+
+.bg-white,
+.bg-gray-100,
+.bg-gray-200 {
+  background: #181e29 !important;
+  color: #fff !important;
+}
+
+.text-gray-700,
+.text-gray-500 {
+  color: #b3b8c5 !important;
+}
+
+.text-purple-700 {
+  color: #a78bfa !important;
+}
+
+.rounded,
+.rounded-xl,
+.rounded-full {
+  border-radius: 16px !important;
+}
+
+.shadow,
+.shadow-lg {
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.25);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #232a39;
+}
+::-webkit-scrollbar-thumb {
+  background: #181e29;
+  border-radius: 8px;
+}
+

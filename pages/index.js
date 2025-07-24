@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../lib/supabase'
-import CourseCard from '../components/CourseCard'
-import Quiz from '../components/Quiz'
 import { loadStripe } from '@stripe/stripe-js'
 import Image from 'next/image'
 
@@ -11,6 +9,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 export default function Home({ courses }) {
   const [session, setSession]   = useState(null)
   const [userPaid, setUserPaid] = useState(false)
+  const [current, setCurrent]   = useState(0)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -30,69 +29,7 @@ export default function Home({ courses }) {
     return () => subscription?.unsubscribe()
   }, [])
 
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-        <div className="max-w-4xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white drop-shadow-lg">
-              Make Money Online<br />with AI
-            </h1>
-            <p className="text-lg md:text-xl text-blue-200 mb-2 font-medium">
-              Master ChatGPT, MidJourney &amp; 6 more tools
-            </p>
-          </div>
-
-          {/* Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
-              <h2 className="text-lg font-bold mb-2 text-white">About Us</h2>
-              <p className="text-blue-100 text-center">
-                We&apos;re help you build online income by leveraging artificial intelligence.
-              </p>
-            </div>
-            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
-              <h2 className="text-lg font-bold mb-2 text-white">What You&apos;ll Learn</h2>
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {/* Example icons, replace with your own */}
-                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">ChatGPT</span>
-                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">MidJourney</span>
-                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Automation</span>
-                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Content</span>
-                <span className="bg-[#232a39] rounded-full px-3 py-2 text-blue-300 font-semibold text-sm">Marketing</span>
-              </div>
-            </div>
-            <div className="bg-[#181e29] rounded-xl shadow-lg p-6 flex flex-col items-center">
-              <h2 className="text-lg font-bold mb-2 text-white">Outcomes</h2>
-              <ul className="text-blue-100 text-center space-y-1">
-                <li>Earn freelancing</li>
-                <li>Content creation</li>
-                <li>Online business</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Auth Buttons */}
-          <div className="flex justify-center gap-6 mt-8">
-            <Link href="/signup">
-              <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
-                Sign Up
-              </a>
-            </Link>
-            <Link href="/login">
-              <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
-                Log In
-              </a>
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const courseId = 1
-  const featuredModuleId = 2
   const course = courses.find(c => c.id === courseId)
   const locked = !userPaid
 
@@ -109,7 +46,6 @@ export default function Home({ courses }) {
     stripe.redirectToCheckout({ sessionId })
   }
 
-  // Carousel data (update image paths as needed)
   const carouselItems = [
     {
       title: "ChatGPT for Beginners",
@@ -127,9 +63,7 @@ export default function Home({ courses }) {
       img: "/carousel3.jpg"
     }
   ]
-  const [current, setCurrent] = useState(0)
 
-  // Example course summary
   const courseSummary = [
     { name: "ChatGPT for Beginners", unlocked: true },
     { name: "Advanced ChatGPT Techniques", unlocked: true },
@@ -137,6 +71,11 @@ export default function Home({ courses }) {
     { name: "Automating Tasks with AI", unlocked: false },
     { name: "AI-Driven Marketing", unlocked: false }
   ]
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10 relative">
@@ -205,18 +144,29 @@ export default function Home({ courses }) {
         ))}
       </div>
 
-      {/* Auth Buttons (only if not already globally integrated) */}
+      {/* Auth Buttons or Sign Out */}
       <div className="flex justify-center gap-6 mt-8">
-        <Link href="/signup">
-          <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
-            Sign Up
-          </a>
-        </Link>
-        <Link href="/login">
-          <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
-            Log In
-          </a>
-        </Link>
+        {!session ? (
+          <>
+            <Link href="/signup">
+              <a className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition">
+                Sign Up
+              </a>
+            </Link>
+            <Link href="/login">
+              <a className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-blue-200 font-bold rounded-xl shadow transition">
+                Log In
+              </a>
+            </Link>
+          </>
+        ) : (
+          <button
+            onClick={handleSignOut}
+            className="px-8 py-3 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl shadow transition"
+          >
+            Sign Out
+          </button>
+        )}
       </div>
     </div>
   )

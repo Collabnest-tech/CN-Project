@@ -14,9 +14,6 @@ export default function DropdownNavbar() {
       </button>
       {open && (
         <nav className="absolute left-4 top-16 w-56 bg-white shadow-lg flex flex-col py-8 px-4 space-y-4 z-50 rounded">
-          <Link href="/dashboard">
-            <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Dashboard</a>
-          </Link>
           <Link href="/courses">
             <a className="block px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold">Courses</a>
           </Link>

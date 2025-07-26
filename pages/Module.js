@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
-import ModuleViewer from '../../components/ModuleViewer'
-import { moduleData } from '../../lib/moduleData'
+import { supabase } from '../lib/supabase'
+import ModuleViewer from '../components/ModuleViewer'
+import { moduleData } from '../lib/moduleData'
 import Link from 'next/link'
 
 export default function ModulePage() {

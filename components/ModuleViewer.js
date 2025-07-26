@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import Quiz from './Quiz'
 
 export default function ModuleViewer({ moduleId }) {
   const [moduleContent, setModuleContent] = useState(null)
   const [currentSegment, setCurrentSegment] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [showQuiz, setShowQuiz] = useState(false)
-  const [videoEnded, setVideoEnded] = useState(false)
   const videoRef = useRef(null)
 
   useEffect(() => {
@@ -15,12 +12,20 @@ export default function ModuleViewer({ moduleId }) {
 
   async function loadModuleContent() {
     try {
-      // For now, we'll create a simple structure since the HTML files need processing
-      // You can enhance this later to actually parse the HTML files
-      setModuleContent({
-        videoSrc: `/edited and compressed vids/Mod${moduleId}.mp4`,
-        transcript: [] // Will be populated when HTML parsing is implemented
-      })
+      // Load the HTML content
+      const response = await fetch(`/edited and compressed vids/mod${moduleId}.html`)
+      const htmlContent = await response.text()
+      
+      // Extract transcript data from the HTML
+      const transcriptMatch = htmlContent.match(/const transcript = (\[[\s\S]*?\]);/)
+      if (transcriptMatch) {
+        const transcriptData = eval(transcriptMatch[1])
+        setModuleContent({
+          htmlContent,
+          transcript: transcriptData,
+          videoSrc: `/edited and compressed vids/Mod${moduleId}.mp4`
+        })
+      }
     } catch (error) {
       console.error('Error loading module content:', error)
     }
@@ -30,26 +35,19 @@ export default function ModuleViewer({ moduleId }) {
     if (!videoRef.current || !moduleContent) return
     
     const currentTime = videoRef.current.currentTime
-    // Add logic for synchronized content when transcript is available
-  }
-
-  function handleVideoEnd() {
-    setVideoEnded(true)
-    setShowQuiz(true)
+    const segment = moduleContent.transcript.find(item => 
+      currentTime >= item.startTime && currentTime <= item.endTime
+    )
+    
+    if (segment && segment !== currentSegment) {
+      setCurrentSegment(segment)
+    }
   }
 
   if (!moduleContent) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-white text-xl">Loading module...</div>
-      </div>
-    )
-  }
-
-  if (showQuiz) {
-    return (
-      <div className="bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] rounded-xl p-6">
-        <Quiz moduleId={moduleId} onComplete={() => setShowQuiz(false)} />
       </div>
     )
   }
@@ -66,7 +64,6 @@ export default function ModuleViewer({ moduleId }) {
           onTimeUpdate={handleTimeUpdate}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          onEnded={handleVideoEnd}
         />
         
         {/* Interactive Subtitles */}
@@ -77,26 +74,34 @@ export default function ModuleViewer({ moduleId }) {
         )}
       </div>
 
-      {/* Module Info */}
-      <div className="p-6 bg-[#181e29]">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-white mb-4">
-            Module {moduleId} Content
-          </h3>
-          <p className="text-blue-200 mb-4">
-            Watch the video above to learn about AI tools and strategies for online earning.
-          </p>
-          
-          {videoEnded && (
-            <button
-              onClick={() => setShowQuiz(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              Take Quiz to Complete Module
-            </button>
-          )}
+      {/* Interactive Slides */}
+      {currentSegment?.slideContent && (
+        <div className="p-6 bg-[#181e29]">
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-white mb-4">
+              {currentSegment.slideContent.title}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <ul className="space-y-2">
+                  {currentSegment.slideContent.points?.map((point, idx) => (
+                    <li key={idx} className="text-blue-200 flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {currentSegment.slideContent.freeAlternative && (
+                <div className="bg-green-900 bg-opacity-30 p-4 rounded-lg">
+                  <h4 className="text-green-400 font-semibold mb-2">💡 Free Alternative:</h4>
+                  <p className="text-green-200">{currentSegment.slideContent.freeAlternative}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

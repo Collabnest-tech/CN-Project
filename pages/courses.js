@@ -1,39 +1,17 @@
-import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import { supabase } from '../lib/supabase'
-import ModuleCard from '../components/ModuleCard'
-import { courseData } from '../lib/moduleData'
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+import { moduleData } from '../lib/moduleData'
+import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Courses() {
-  const [userPaid, setUserPaid] = useState(false)
   const [session, setSession] = useState(null)
+  const [userPaid, setUserPaid] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     checkUserSession()
   }, [])
-
-  useEffect(() => {
-    // Check if user has paid for course access
-    const checkUserAccess = async () => {
-      if (session?.user?.id) {
-        // Your existing payment check logic
-        const { data, error } = await supabase
-          .from('users')
-          .select('has_paid')
-          .eq('id', session.user.id)
-          .single()
-        
-        if (!error && data) {
-          setUserPaid(data.has_paid)
-        }
-      }
-    }
-    checkUserAccess()
-  }, [session])
 
   async function checkUserSession() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -53,31 +31,6 @@ export default function Courses() {
     setLoading(false)
   }
 
-  async function handleStripeCheckout() {
-    if (!session) {
-      alert('Please log in to purchase the course.')
-      return
-    }
-
-    const stripe = await stripePromise
-    const res = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
-        userId: session.user.id
-      })
-    })
-    
-    if (!res.ok) {
-      alert('Failed to start checkout.')
-      return
-    }
-    
-    const { sessionId } = await res.json()
-    stripe.redirectToCheckout({ sessionId })
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] flex items-center justify-center">
@@ -87,89 +40,151 @@ export default function Courses() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] py-6 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Course Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            {courseData.title}
-          </h1>
-          <p className="text-xl text-blue-200 mb-6">
-            {courseData.description}
-          </p>
-          
-          {/* Course Stats */}
-          <div className="flex flex-wrap justify-center gap-6 text-blue-200">
-            <div className="flex items-center">
-              <span className="text-2xl mr-2">📚</span>
-              <span>{courseData.totalModules} Modules</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-2xl mr-2">⏱️</span>
-              <span>{courseData.totalDuration} Total</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-2xl mr-2">🎯</span>
-              <span>{courseData.level}</span>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
+      <div className="max-w-sm mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <Image
+            src="/logo.jpeg"
+            alt="Collab-Nest Logo"
+            width={60}
+            height={60}
+            className="rounded-full shadow-lg mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold mb-2">AI for Making Money Online</h1>
+          <p className="text-blue-200 text-sm">Master 8 modules to build your AI income streams</p>
+        </div>
+
+        {/* Course Progress */}
+        <div className="bg-[#181e29] rounded-xl p-4 mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white font-semibold text-sm">Course Progress</span>
+            <span className="text-blue-400 text-sm">0/8 Modules</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2">
+            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '0%' }}></div>
           </div>
         </div>
 
-        {/* Purchase Section */}
+        {/* Payment Status */}
         {!userPaid && (
-          <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-8 mb-12 text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Unlock All Modules
-            </h2>
-            <p className="text-blue-200 mb-6">
-              Get lifetime access to all 8 modules and start building your AI-powered income streams today!
+          <div className="bg-gradient-to-r from-red-900 to-orange-900 rounded-xl p-4 mb-6 text-center">
+            <h3 className="text-lg font-bold text-white mb-2">🔒 Course Locked</h3>
+            <p className="text-orange-200 text-sm mb-3">
+              Complete your purchase to unlock all 8 modules and start building your AI income streams.
             </p>
-            <div className="text-4xl font-bold text-green-400 mb-6">
-              ${courseData.price}
-              <span className="text-lg text-blue-200 ml-2">one-time payment</span>
-            </div>
-            <button
-              onClick={handleStripeCheckout}
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-lg font-bold text-xl transition-all duration-300 transform hover:scale-105"
-            >
-              🚀 Start Learning Now
-            </button>
+            <Link href="/checkout">
+              <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all">
+                Unlock Course - $15
+              </a>
+            </Link>
           </div>
         )}
 
         {/* Modules Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-          {courseData.modules.map((module) => (
-            <ModuleCard
+        <div className="space-y-4">
+          {moduleData.map((module) => (
+            <div
               key={module.id}
-              moduleNumber={module.id}
-              locked={!userPaid}
-              userPaid={userPaid}
-            />
+              className={`relative rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${
+                !userPaid ? 'bg-gray-800 opacity-75' : 'bg-gradient-to-br from-blue-900 to-purple-900'
+              }`}
+            >
+              {/* Module Header */}
+              <div className="flex items-center gap-4 p-4">
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <Image
+                    src={module.thumbnail}
+                    alt={module.title}
+                    fill
+                    className="rounded-lg object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'flex'
+                    }}
+                  />
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center text-2xl hidden">
+                    {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : module.id === 4 ? '🛍️' : module.id === 5 ? '📺' : module.id === 6 ? '🛒' : module.id === 7 ? '📱' : '🧠'}
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-blue-400 font-bold text-sm">Module {module.id}</span>
+                    {!userPaid && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">🔒 Locked</span>}
+                  </div>
+                  <h3 className="text-white font-bold text-sm mb-1 line-clamp-2">{module.title}</h3>
+                  <p className="text-blue-200 text-xs mb-2 line-clamp-2">{module.description}</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-300">
+                      <span>⏱️ {module.duration}</span>
+                    </div>
+                    <div className="text-green-400 text-xs font-semibold">
+                      💰 {module.earnings}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tools Preview */}
+              <div className="px-4 pb-4">
+                <div className="flex flex-wrap gap-1">
+                  {module.tools.slice(0, 3).map((tool, idx) => (
+                    <span key={idx} className="px-2 py-1 bg-blue-600 bg-opacity-50 text-blue-100 text-xs rounded">
+                      {tool}
+                    </span>
+                  ))}
+                  {module.tools.length > 3 && (
+                    <span className="px-2 py-1 bg-gray-600 bg-opacity-50 text-gray-300 text-xs rounded">
+                      +{module.tools.length - 3} more
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="px-4 pb-4">
+                {userPaid ? (
+                  <Link href={`/module/${module.id}`}>
+                    <a className="block w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-2 rounded-lg font-bold text-center text-sm transition-all">
+                      Start Module →
+                    </a>
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full bg-gray-600 text-gray-400 py-2 rounded-lg font-bold text-center text-sm cursor-not-allowed"
+                  >
+                    🔒 Unlock Course First
+                  </button>
+                )}
+              </div>
+
+              {/* Lock Overlay */}
+              {!userPaid && (
+                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                  <div className="text-4xl">🔒</div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
-        {/* Learning Path */}
-        <div className="bg-[#181e29] rounded-xl p-8">
-          <h3 className="text-2xl font-bold text-white mb-6 text-center">
-            Your Learning Journey
-          </h3>
-          <div className="flex flex-wrap justify-center items-center gap-4">
-            {['Watch', 'Practice', 'Quiz', 'Certificate'].map((step, idx) => (
-              <div key={step} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    {idx + 1}
-                  </div>
-                  <span className="text-blue-200 text-sm mt-2">{step}</span>
-                </div>
-                {idx < 3 && (
-                  <div className="hidden md:block text-blue-400 mx-4 text-2xl">→</div>
-                )}
-              </div>
-            ))}
+        {/* Bottom CTA */}
+        {!userPaid && (
+          <div className="mt-8 text-center bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-white mb-2">Ready to Start?</h3>
+            <p className="text-green-200 text-sm mb-4">
+              Get instant access to all 8 modules and start building your AI income streams today!
+            </p>
+            <Link href="/checkout">
+              <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold text-base transition-all">
+                Get Started - $15
+              </a>
+            </Link>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

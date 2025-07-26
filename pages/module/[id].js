@@ -11,6 +11,7 @@ export default function ModulePage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showQuiz, setShowQuiz] = useState(false)
   const [videoEnded, setVideoEnded] = useState(false)
+  const [isPortrait, setIsPortrait] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -18,10 +19,51 @@ export default function ModulePage() {
       const foundModule = moduleData.find(m => m.id === moduleId)
       setModule(foundModule)
     }
+
+    // Check orientation
+    const checkOrientation = () => {
+      if (window.innerHeight > window.innerWidth) {
+        setIsPortrait(true)
+      } else {
+        setIsPortrait(false)
+      }
+    }
+
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+    }
   }, [id])
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
+    
+    if (!isFullscreen) {
+      // Entering fullscreen
+      const video = document.querySelector('video')
+      if (video) {
+        if (video.requestFullscreen) {
+          video.requestFullscreen()
+        } else if (video.webkitRequestFullscreen) {
+          video.webkitRequestFullscreen()
+        } else if (video.mozRequestFullScreen) {
+          video.mozRequestFullScreen()
+        }
+      }
+    } else {
+      // Exiting fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen()
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen()
+      }
+    }
   }
 
   const handleVideoEnded = () => {
@@ -38,18 +80,17 @@ export default function ModulePage() {
 
   if (showQuiz) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
+        <div className="max-w-sm mx-auto">
           <button
             onClick={() => setShowQuiz(false)}
-            className="text-blue-400 hover:text-blue-300 mb-6 flex items-center"
+            className="text-blue-400 hover:text-blue-300 mb-4 flex items-center text-sm"
           >
             ← Back to Module
           </button>
           <Quiz 
             moduleId={module.id} 
             onComplete={(score, total) => {
-              // You can add completion logic here
               console.log(`Quiz completed: ${score}/${total}`)
             }}
           />
@@ -59,49 +100,59 @@ export default function ModulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
+      <div className="max-w-sm mx-auto">
         {/* Back Button */}
         <Link href="/courses">
-          <a className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
+          <a className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-4 text-sm">
             ← Back to Courses
           </a>
         </Link>
 
         {/* Module Header */}
-        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-8 mb-8">
-          <div className="flex items-center mb-4">
-            <div className="text-4xl mr-4">📚</div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Module {module.id}: {module.title}</h1>
-              <p className="text-blue-200 mt-2">{module.description}</p>
+        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 mb-6">
+          <div className="text-center">
+            <div className="text-3xl mb-2">📚</div>
+            <h1 className="text-xl font-bold text-white mb-2">Module {module.id}: {module.title}</h1>
+            <p className="text-blue-200 text-sm mb-3">{module.description}</p>
+            <div className="flex justify-center gap-4 text-xs text-blue-200">
+              <span>⏱️ {module.duration}</span>
+              <span>💰 {module.earnings}</span>
             </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 text-sm text-blue-200">
-            <span>⏱️ {module.duration}</span>
-            <span>💰 {module.earnings}</span>
           </div>
         </div>
 
         {/* Video Player */}
-        <div className="bg-[#181e29] rounded-xl overflow-hidden mb-8">
-          <div className="p-4 bg-[#232a39] flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">Module Video</h3>
+        <div className="bg-[#181e29] rounded-xl overflow-hidden mb-6">
+          <div className="p-3 bg-[#232a39] flex justify-between items-center">
+            <h3 className="text-base font-semibold text-white">Module Video</h3>
             <button
               onClick={toggleFullscreen}
-              className="text-blue-400 hover:text-blue-300 transition-colors px-3 py-1 rounded-md hover:bg-blue-600 hover:bg-opacity-20"
+              className="text-blue-400 hover:text-blue-300 transition-colors px-2 py-1 rounded-md text-sm"
               title="Toggle Fullscreen"
             >
-              {isFullscreen ? '🗗 Exit Fullscreen' : '⛶ Fullscreen'}
+              {isFullscreen ? '🗗' : '⛶'}
             </button>
           </div>
           
-          <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative'}`}>
+          {/* Video Container with Rotation Warning */}
+          <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''}`}>
+            {/* Rotation Warning Overlay for Mobile Portrait Mode in Fullscreen */}
+            {isFullscreen && isPortrait && (
+              <div className="absolute inset-0 z-10 bg-black bg-opacity-90 flex items-center justify-center">
+                <div className="text-center text-white p-8">
+                  <div className="text-6xl mb-4">📱↻</div>
+                  <h2 className="text-2xl font-bold mb-4">Rotate Your Device</h2>
+                  <p className="text-lg mb-4">Please rotate your phone to landscape mode for the best viewing experience.</p>
+                  <div className="text-4xl animate-pulse">↻</div>
+                </div>
+              </div>
+            )}
+            
             {isFullscreen && (
               <button
                 onClick={toggleFullscreen}
-                className="absolute top-4 right-4 z-10 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-70 rounded-full w-12 h-12 flex items-center justify-center transition-all"
+                className="absolute top-4 right-4 z-20 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-70 rounded-full w-10 h-10 flex items-center justify-center transition-all"
               >
                 ✕
               </button>
@@ -112,6 +163,9 @@ export default function ModulePage() {
               className={`w-full ${isFullscreen ? 'h-full object-contain' : 'aspect-video'}`}
               onEnded={handleVideoEnded}
               preload="metadata"
+              style={{
+                display: isFullscreen && isPortrait ? 'none' : 'block'
+              }}
             >
               <source src={`/modules/Mod${module.id}.mp4`} type="video/mp4" />
               Your browser does not support the video tag.
@@ -120,12 +174,12 @@ export default function ModulePage() {
         </div>
 
         {/* Quiz Button */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <button
             onClick={() => setShowQuiz(true)}
-            className={`px-8 py-4 rounded-lg font-bold text-lg transition-all ${
+            className={`w-full px-6 py-3 rounded-lg font-bold text-base transition-all ${
               videoEnded 
-                ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white transform hover:scale-105'
+                ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
                 : 'bg-gray-600 text-gray-300'
             }`}
             disabled={!videoEnded}
@@ -135,11 +189,11 @@ export default function ModulePage() {
         </div>
 
         {/* Tools Section */}
-        <div className="bg-[#181e29] rounded-xl p-8 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Tools Covered</h2>
+        <div className="bg-[#181e29] rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-bold text-white mb-3">Tools Covered</h2>
           <div className="flex flex-wrap gap-2">
             {module.tools.map((tool, idx) => (
-              <span key={idx} className="px-3 py-1 bg-blue-600 bg-opacity-50 text-blue-100 rounded-full">
+              <span key={idx} className="px-2 py-1 bg-blue-600 bg-opacity-50 text-blue-100 rounded-full text-xs">
                 {tool}
               </span>
             ))}
@@ -147,19 +201,19 @@ export default function ModulePage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-4">
           {module.id > 1 && (
             <Link href={`/module/${module.id - 1}`}>
-              <a className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-lg font-semibold transition-all">
-                ← Previous Module
+              <a className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all text-center text-sm">
+                ← Previous
               </a>
             </Link>
           )}
           
           {module.id < 8 && (
             <Link href={`/module/${module.id + 1}`}>
-              <a className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all ml-auto">
-                Next Module →
+              <a className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition-all text-center text-sm">
+                Next →
               </a>
             </Link>
           )}

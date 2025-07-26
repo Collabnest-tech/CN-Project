@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module 4: AI for E-commerce</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #3b82f6;
+            --text-color: #1f2937;
+            --subtitle-bg: rgba(0,0,0,0.8);
+            --background-color: #f0f4f8;  /* New light grayish blue */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            background: var(--background-color);
+        }
+
+        .presentation-container {
+            display: flex;
+            width: 1920px;
+            height: 1080px;
+        }
+
+        .video-section {
+            width: 720px;
+            height: 1080px;
+            background: #000;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .subtitle-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 80%;  /* Increased width */
+            max-width: 90%;
+            text-align: center;
+            padding: 20px 30px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9));
+            color: white;
+            font-size: 28px;
+            font-weight: 500;
+            border-radius: 12px;
+            z-index: 10;
+            transition: all 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            line-height: 1.4;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .subtitle-container.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .subtitle-container.inactive {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .content-section {
+            width: 1200px;
+            height: 1080px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 1120px;
+            height: 1000px;
+            background: linear-gradient(135deg, white 60%, var(--background-color));
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: var(--secondary-color);
+            opacity: 0.1;
+            border-radius: 0 0 0 100%;
+        }
+
+        .slide h2 {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .slide ul {
+            font-size: 32px;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .free-alternative {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+
+        .emoji {
+            font-size: 48px;
+            margin-right: 10px;
+        }
+
+        .arrow-flow {
+            position: absolute;
+            font-size: 36px;
+            color: var(--primary-color);
+        }
+
+        /* New styles for animated bubbles and flow diagram */
+        .accent-bubble {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: var(--primary-color);
+            opacity: 0.1;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .flow-diagram {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transform-origin: left;
+        }
+
+        .flow-arrow {
+            position: absolute;
+            font-size: 24px;
+            color: var(--primary-color);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            transform-origin: center;
+            z-index: 1;
+        }
+
+        .typewriter {
+            overflow: hidden;
+            border-right: .15em solid var(--primary-color);
+            white-space: nowrap;
+            margin: 0;
+            animation: typing 3.5s steps(40, end),
+                       blink-caret .75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--primary-color) }
+        }
+
+        @keyframes confettiBurst {
+            0% { transform: translateY(0) rotate(0); opacity: 1; }
+            100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="video-section">
+            <video id="moduleVideo" autoplay controls playsinline>
+                <source src="mod4.mp4" type="video/mp4">
+            </video>
+            <div id="subtitles" class="subtitle-container"></div>
+        </div>
+        <div class="content-section" id="slideContainer"></div>
+    </div>
+
+    <script>
+        // Transcript data with actual content from mod1_timestamps_roman.txt
+        const transcript = [
+            {
+                startTime: 1.32,
+                endTime: 25.00,
+                text: "Assalam o alaikum aur module 4 mein khush amdeed... AI ke istemal kar ke e-commerce business kaise shuru kiya jaye",
+                slideContent: {
+                    title: "AI for E-commerce 🛍️",
+                    points: [
+                        "🤖 Shopify AI Features",
+                        "📊 Smart Analytics",
+                        "🎯 Product Research",
+                        "💡 Automated Marketing"
+                    ],
+                    freeAlternative: "Start with Shopify's free trial"
+                }
+            },
+            {
+                startTime: 25.00,
+                endTime: 60.00,
+                text: "E-commerce kyun... online business opportunities",
+                slideContent: {
+                    title: "Why E-commerce? 💰",
+                    points: [
+                        "🌐 Global Market Access",
+                        "⚡ 24/7 Business",
+                        "📈 Scalable Growth",
+                        "🎯 AI-Enhanced Sales"
+                    ]
+                }
+            },
+            {
+                startTime: 60.00,
+                endTime: 120.00,
+                text: "Shopify AI features... store setup",
+                slideContent: {
+                    title: "Shopify AI Tools ⚡",
+                    points: [
+                        "🎨 Store Design AI",
+                        "📝 Product Description Generator",
+                        "🤖 Customer Service Bot",
+                        "📊 Sales Analytics"
+                    ],
+                    freeAlternative: "Use basic plan for initial setup"
+                }
+            },
+            {
+                startTime: 120.00,
+                endTime: 180.00,
+                text: "Product research... market analysis",
+                slideContent: {
+                    title: "Smart Product Selection 🔍",
+                    points: [
+                        "📊 Trend Analysis",
+                        "💡 Niche Finder",
+                        "📈 Demand Prediction",
+                        "🎯 Price Optimization"
+                    ]
+                }
+            },
+            {
+                startTime: 180.00,
+                endTime: 240.00,
+                text: "Marketing automation... customer engagement",
+                slideContent: {
+                    title: "Marketing Automation 🚀",
+                    points: [
+                        "📧 Email Campaigns",
+                        "🎯 Ad Targeting",
+                        "💬 Chat Support",
+                        "📱 Social Integration"
+                    ]
+                }
+            },
+            {
+                startTime: 240.00,
+                endTime: 300.00,
+                text: "Getting started... practical steps",
+                slideContent: {
+                    title: "Getting Started Guide 🎯",
+                    points: [
+                        "1️⃣ Choose Products",
+                        "2️⃣ Set Up Store",
+                        "3️⃣ Add AI Tools",
+                        "4️⃣ Launch Marketing"
+                    ]
+                }
+            },
+            {
+                startTime: 300.00,
+                endTime: 330.00,
+                text: "Action steps... store setup",
+                slideContent: {
+                    title: "Action Steps Today ✨",
+                    points: [
+                        "🏪 Create Shopify Account",
+                        "🎨 Design Store Layout",
+                        "📝 Add Products",
+                        "🚀 Launch Store"
+                    ]
+                }
+            },
+            {
+                startTime: 330.00,
+                endTime: 350.00,
+                text: "Next module preview... social media marketing",
+                slideContent: {
+                    title: "Next Module Preview 📱",
+                    points: [
+                        "📱 Social Media AI",
+                        "📊 Analytics Tools",
+                        "🎯 Content Strategy",
+                        "💡 Automation Tips"
+                    ]
+                }
+            }
+        ];
+
+        // Initialize video and containers
+        const video = document.getElementById('moduleVideo');
+        const subtitlesContainer = document.getElementById('subtitles');
+        const slideContainer = document.getElementById('slideContainer');
+
+        // Track current slide
+        let currentSlideId = null;
+
+        // Update subtitles and slides based on video time
+        video.addEventListener('timeupdate', () => {
+            const currentTime = video.currentTime;
+            
+            // Find current transcript segment
+            const currentSegment = transcript.find(item => 
+                currentTime >= item.startTime && currentTime <= item.endTime
+            );
+            
+            // Update subtitles
+            if (currentSegment) {
+                subtitlesContainer.textContent = currentSegment.text;
+                subtitlesContainer.classList.add('active');
+                subtitlesContainer.classList.remove('inactive');
+            } else {
+                subtitlesContainer.classList.remove('active');
+                subtitlesContainer.classList.add('inactive');
+            }
+            
+            // Update slides
+            updateSlides(currentTime);
+        });
+
+        // Create and update slides
+        function updateSlides(currentTime) {
+            const slideData = transcript.find(item => 
+                currentTime >= item.startTime && currentTime <= item.endTime
+            );
+
+            // Only create new slide if it's different from current slide
+            if (slideData && slideData.slideContent) {
+                const slideId = `${slideData.startTime}-${slideData.endTime}`;
+                if (slideId !== currentSlideId) {
+                    currentSlideId = slideId;
+                    createSlide(slideData.slideContent);
+                }
+            }
+        }
+
+        function createSlide(content) {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            
+            // Add decorative bubbles
+            const bubbles = Array(3).fill(0).map((_, i) => {
+                return `<div class="accent-bubble" style="
+                    top: ${Math.random() * 80}%;
+                    left: ${Math.random() * 80}%;
+                    animation: float ${2 + i}s infinite;
+                "></div>`;
+            }).join('');
+            
+            // Create flow diagram for applicable slides
+            const flowDiagram = content.title.includes('Guide') || content.title.includes('Steps') ? `
+                <div class="flow-diagram">
+                    ${content.points.map((point, i) => `
+                        <div class="flow-step" style="animation: slideInRight ${0.3 + i * 0.1}s ease-out">
+                            ${point}
+                            ${i < content.points.length - 1 ? `
+                                <div class="flow-arrow">↓</div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            
+            slide.innerHTML = `
+                ${bubbles}
+                <h2 class="animate__animated animate__fadeInDown">${content.title}</h2>
+                ${flowDiagram || `
+                    <ul>
+                        ${content.points.map((point, i) => `
+                            <li class="animate__animated animate__slideInRight" 
+                                style="animation-delay: ${i * 0.1}s">
+                                ${point}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `}
+                ${content.freeAlternative ? `
+                    <div class="free-alternative animate__animated animate__fadeInUp">
+                        💡 Free Alternative: ${content.freeAlternative}
+                    </div>
+                ` : ''}
+            `;
+
+            // Clear container and add new slide
+            slideContainer.innerHTML = '';
+            slideContainer.appendChild(slide);
+
+            // Enhanced GSAP animations
+            const tl = gsap.timeline();
+            tl.from('h2', {opacity: 0, y: -30, duration: 0.6, ease: "back.out(1.7)"})
+              .from('.flow-step, li', {
+                  opacity: 0,
+                  x: -50,
+                  duration: 0.4,
+                  stagger: 0.1,
+                  ease: "power2.out"
+              })
+              .from('.accent-bubble', {
+                  opacity: 0,
+                  scale: 0,
+                  duration: 0.6,
+                  stagger: 0.2,
+                  ease: "elastic.out(1, 0.5)"
+              })
+              .from('.free-alternative', {
+                  opacity: 0,
+                  y: 30,
+                  duration: 0.4,
+                  ease: "power2.out"
+              });
+
+            // Confetti effect
+            const confettiCount = 100;
+            for (let i = 0; i < confettiCount; i++) {
+                createConfetti(slide);
+            }
+
+            // Typewriter effect for title
+            const titleElement = slide.querySelector('h2');
+            if (titleElement) {
+                titleElement.classList.add('typewriter');
+            }
+        }
+
+        function createConfetti(parent) {
+            const colors = ['#ff0', '#0ff', '#f0f', '#0f0', '#00f', '#f00'];
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animation = `confettiBurst ${1 + Math.random() * 2}s ease-out forwards`;
+            parent.appendChild(confetti);
+
+            // Remove confetti after animation
+            setTimeout(() => {
+                confetti.remove();
+            }, 2000);
+        }
+
+        // Start the presentation with sound
+        window.addEventListener('load', () => {
+            video.muted = false;
+            video.volume = 1.0;
+            const playPromise = video.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // Auto-play was prevented
+                    // Show a "Play" button so that user can start playback
+                    const playButton = document.createElement('button');
+                    playButton.innerHTML = '▶️ Play Video';
+                    playButton.style = `
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        padding: 20px 40px;
+                        font-size: 24px;
+                        background: var(--primary-color);
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        z-index: 20;
+                    `;
+                    video.parentElement.appendChild(playButton);
+                    
+                    playButton.addEventListener('click', () => {
+                        video.play();
+                        playButton.remove();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

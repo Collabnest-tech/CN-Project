@@ -1,82 +1,88 @@
-import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useSwipeable } from 'react-swipeable'
 import { supabase } from '../lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
-import Image from 'next/image'
-import { useSwipeable } from 'react-swipeable'
+import { moduleData, courseData } from '../lib/moduleData'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
-export default function Home({ courses }) {
-  const [session, setSession]   = useState(null)
+export default function Home() {
+  const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
-  const [current, setCurrent]   = useState(0)
+  const [current, setCurrent] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session) {
-        supabase.from('users').select('has_paid').eq('id', session.user.id).single()
-          .then(({ data, error }) => error ? console.error(error) : setUserPaid(data.has_paid))
-      }
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSession(session)
-      if (session) {
-        supabase.from('users').select('has_paid').eq('id', session.user.id).single()
-          .then(({ data, error }) => error ? console.error(error) : setUserPaid(data.has_paid))
-      } else setUserPaid(false)
-    })
-    return () => subscription?.unsubscribe()
+    checkUserSession()
+    const interval = setInterval(() => {
+      setCurrent(prev => (prev + 1) % carouselItems.length)
+    }, 5000)
+    return () => clearInterval(interval)
   }, [])
 
-  const courseId = 1
-  const course = courses.find(c => c.id === courseId)
-  const locked = !userPaid
+  async function checkUserSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    setSession(session)
+    
+    if (session) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('has_paid')
+        .eq('id', session.user.id)
+        .single()
+      
+      if (!error && data) {
+        setUserPaid(data.has_paid)
+      }
+    }
+  }
 
   async function handlePurchase() {
-    if (!course) { console.error('Course not found'); return }
+    if (!session) {
+      window.location.href = '/login'
+      return
+    }
+
     const stripe = await stripePromise
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId: course.price_id, userId: session.user.id })
+      body: JSON.stringify({ 
+        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+        userId: session.user.id
+      })
     })
-    if (!res.ok) { console.error(await res.text()); return }
+    
+    if (!res.ok) {
+      alert('Failed to start checkout.')
+      return
+    }
+    
     const { sessionId } = await res.json()
     stripe.redirectToCheckout({ sessionId })
   }
 
   const carouselItems = [
     {
-      title: "ChatGPT for Beginners",
-      description: "Start your AI journey with ChatGPT basics.",
-      img: "/carousel1.jpg"
+      title: "Master AI Tools for Income",
+      description: "Learn ChatGPT, MidJourney & 20+ AI tools to build multiple income streams",
+      img: "/hero-images/ai-tools.jpg",
+      icon: "🤖"
     },
     {
-      title: "Advanced ChatGPT Techniques",
-      description: "Unlock advanced prompts and workflows.",
-      img: "/carousel2.jpg"
+      title: "Real Income Potential",
+      description: "$100-5000/month with proven AI strategies and automation",
+      img: "/hero-images/income.jpg", 
+      icon: "💰"
     },
     {
-      title: "MidJourney Mastery",
-      description: "Create stunning visuals with AI.",
-      img: "/carousel3.jpg"
+      title: "Step-by-Step Learning",
+      description: "8 comprehensive modules with practical, actionable content",
+      img: "/hero-images/learning.jpg",
+      icon: "📚"
     }
   ]
-
-  const courseSummary = [
-    { name: "ChatGPT for Beginners", unlocked: true },
-    { name: "Advanced ChatGPT Techniques", unlocked: true },
-    { name: "Introduction to MidJourney", unlocked: false },
-    { name: "Automating Tasks with AI", unlocked: false },
-    { name: "AI-Driven Marketing", unlocked: false }
-  ]
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
-  }
 
   const handlers = useSwipeable({
     onSwipedLeft: () => setCurrent((current + 1) % carouselItems.length),
@@ -86,47 +92,83 @@ export default function Home({ courses }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10 relative">
-      {/* Logo top left */}
+      {/* Logo */}
       <div className="absolute top-6 left-8 z-10">
         <Image
           src="/logo.jpeg"
-          alt="Collab-Nest Logo"
+          alt="Collabnest Logo"
           width={90}
           height={90}
           className="rounded-full shadow-lg"
         />
       </div>
 
-      {/* Title */}
-      <div className="max-w-4xl mx-auto text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white drop-shadow-lg">
-          Make Money Online<br />with AI
+      {/* Hero Section */}
+      <div className="max-w-6xl mx-auto text-center mb-16 pt-16">
+        <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-lg">
+          Make Money Online<br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            with AI
+          </span>
         </h1>
-        <p className="text-lg md:text-xl text-blue-200 mb-2 font-medium">
-          Master ChatGPT, MidJourney &amp; more tools
+        <p className="text-xl md:text-2xl text-blue-200 mb-8 font-medium max-w-3xl mx-auto">
+          Master ChatGPT, MidJourney &amp; 20+ AI tools to build multiple passive income streams
         </p>
+        
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          {userPaid ? (
+            <Link href="/courses">
+              <a className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105">
+                🎓 Continue Learning
+              </a>
+            </Link>
+          ) : (
+            <>
+              <button
+                onClick={handlePurchase}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105"
+              >
+                🚀 Start Learning - ${courseData.price}
+              </button>
+              <Link href="/courses">
+                <a className="border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300">
+                  📋 View Course Details
+                </a>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Carousel */}
-      <div className="max-w-2xl mx-auto mb-12">
-        <div
-          {...handlers}
-          className="relative bg-[#181e29] rounded-xl shadow-lg p-4 md:p-6 flex flex-col items-center"
-        >
-          <Image
-            src={carouselItems[current].img}
-            alt={carouselItems[current].title}
-            width={320}
-            height={180}
-            className="rounded mb-4 object-cover"
-          />
-          <h2 className="text-xl font-bold mb-2 text-white">{carouselItems[current].title}</h2>
-          <p className="text-blue-100 text-center mb-2">{carouselItems[current].description}</p>
-          <div className="flex justify-center gap-2 mt-2">
+      {/* Interactive Carousel */}
+      <div className="max-w-4xl mx-auto mb-16">
+        <div {...handlers} className="relative">
+          <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row items-center gap-8 min-h-[300px]">
+            <div className="flex-1 text-center md:text-left">
+              <div className="text-6xl mb-4">{carouselItems[current].icon}</div>
+              <h2 className="text-3xl font-bold mb-4 text-white">
+                {carouselItems[current].title}
+              </h2>
+              <p className="text-xl text-blue-200 leading-relaxed">
+                {carouselItems[current].description}
+              </p>
+            </div>
+            <div className="flex-1 relative">
+              <div className="w-full h-64 rounded-xl overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                <div className="text-6xl opacity-20">{carouselItems[current].icon}</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Carousel Indicators */}
+          <div className="flex justify-center gap-3 mt-6">
             {carouselItems.map((_, idx) => (
               <button
                 key={idx}
-                className={`w-3 h-3 rounded-full ${current === idx ? 'bg-blue-400' : 'bg-gray-500'}`}
+                className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                  current === idx ? 'bg-blue-400 scale-125' : 'bg-gray-500 hover:bg-gray-400'
+                }`}
                 onClick={() => setCurrent(idx)}
                 aria-label={`Go to slide ${idx + 1}`}
               />
@@ -135,29 +177,79 @@ export default function Home({ courses }) {
         </div>
       </div>
 
-      {/* Course Summary */}
-      <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {courseSummary.map((course, idx) => (
-          <div
-            key={course.name}
-            className={`rounded-xl shadow-lg p-6 flex flex-col items-center ${
-              course.unlocked ? 'bg-[#181e29]' : 'bg-[#232a39] opacity-60'
-            }`}
-          >
-            <h3 className="text-lg font-bold mb-2 text-white">{course.name}</h3>
-            <span className={`mt-2 px-4 py-1 rounded-full text-sm font-semibold ${
-              course.unlocked ? 'bg-green-600 text-white' : 'bg-gray-700 text-blue-200'
-            }`}>
-              {course.unlocked ? 'Unlocked' : 'Purchase to Unlock'}
-            </span>
-          </div>
-        ))}
+      {/* Course Modules Preview */}
+      <div className="max-w-6xl mx-auto mb-16">
+        <h2 className="text-4xl font-bold text-center text-white mb-12">
+          What You'll Learn
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {moduleData.slice(0, 4).map((module) => (
+            <div
+              key={module.id}
+              className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-6 text-center hover:scale-105 transition-all duration-300"
+            >
+              <div className="text-4xl mb-4">
+                {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : '🛍️'}
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">{module.title}</h3>
+              <p className="text-blue-200 text-sm mb-3">{module.description}</p>
+              <div className="text-green-400 text-sm font-semibold">
+                💰 {module.earnings}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="text-center mt-8">
+          <Link href="/courses">
+            <a className="text-blue-400 hover:text-blue-300 font-semibold text-lg">
+              View All 8 Modules →
+            </a>
+          </Link>
+        </div>
       </div>
-      </div>
-  )
-}
 
-export async function getStaticProps() {
-  const { data: courses } = await supabase.from('courses').select('id,title,price_id')
-  return { props: { courses }, revalidate: 60 }
+      {/* Social Proof */}
+      <div className="max-w-4xl mx-auto text-center mb-16">
+        <h2 className="text-3xl font-bold text-white mb-8">
+          Join Thousands Learning AI
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/*
+            { number: "5000+", label: "Students Enrolled", icon: "👥" },
+            { number: "8", label: "Comprehensive Modules", icon: "📚" },
+            { number: "20+", label: "AI Tools Covered", icon: "🛠️" }
+          */}
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="bg-[#181e29] rounded-xl p-6">
+              <div className="text-4xl mb-2">📈</div>
+              <div className="text-3xl font-bold text-blue-400 mb-2">5000+</div>
+              <div className="text-blue-200">Students Enrolled</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Final CTA */}
+      {!userPaid && (
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-green-900 to-blue-900 rounded-2xl p-8">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Start Your AI Journey?
+          </h2>
+          <p className="text-xl text-green-200 mb-6">
+            Get instant access to all 8 modules and start building your income streams today!
+          </p>
+          <button
+            onClick={handlePurchase}
+            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-12 py-4 rounded-xl font-bold text-xl transition-all duration-300 transform hover:scale-105"
+          >
+            🚀 Get Started Now - ${courseData.price}
+          </button>
+          <p className="text-green-300 text-sm mt-4">
+            ✓ Lifetime Access ✓ 30-Day Money Back Guarantee ✓ Instant Download
+          </p>
+        </div>
+      )}
+    </div>
+  )
 }

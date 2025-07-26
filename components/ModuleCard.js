@@ -71,7 +71,7 @@ export default function ModuleCard({ moduleNumber, locked, userPaid }) {
             <span className="text-gray-400 text-sm">🔒 Purchase to Unlock</span>
           </div>
         ) : (
-          <Link href={`/modules/${moduleNumber}`}>
+          <Link href={`/module/${moduleNumber}`}>
             <a className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-center py-2 px-4 rounded-lg font-semibold transition-all duration-300">
               Start Module
             </a>

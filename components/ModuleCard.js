@@ -1,83 +1,50 @@
-import Link from 'next/link';
-import { useState } from 'react';
-import { moduleData } from '../lib/moduleData';
+import { moduleData } from '../lib/moduleData'
+import Link from 'next/link'
 
-export default function ModuleCard({ moduleNumber, locked, userPaid }) {
-  const [imageError, setImageError] = useState(false);
-  const module = moduleData.find(m => m.id === moduleNumber);
+export default function ModuleCard({ moduleId, isLocked }) {
+  const module = moduleData.find(m => m.id === moduleId)
   
-  if (!module) return null;
+  if (!module) {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <p className="text-white">Module not found</p>
+      </div>
+    )
+  }
 
   return (
-    <div className={`relative rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${
-      locked ? 'bg-gray-800 opacity-75' : 'bg-gradient-to-br from-blue-900 to-purple-900 hover:scale-105'
-    }`}>
-      {/* Module Image/Thumbnail */}
-      <div className="relative h-32 bg-gradient-to-r from-blue-600 to-purple-600">
-        {!imageError && (
-          <img 
-            src={`/module-thumbnails/mod${moduleNumber}.jpg`}
-            alt={module.title}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
-        )}
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="text-center text-white">
-            <div className="text-2xl font-bold mb-1">Module {moduleNumber}</div>
-            <div className="text-sm opacity-90">{module.duration}</div>
+    <div className={`bg-gradient-to-br from-[#181e29] to-[#232a39] p-6 rounded-xl border ${isLocked ? 'border-gray-600 opacity-60' : 'border-blue-500/30'}`}>
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-xl font-bold text-white">{module.title}</h3>
+        <span className="text-sm text-blue-400">{module.duration}</span>
+      </div>
+      
+      <p className="text-gray-300 mb-4">{module.description}</p>
+      
+      <div className="space-y-2 mb-4">
+        {module.keyPoints.map((point, idx) => (
+          <div key={idx} className="flex items-start text-sm text-blue-200">
+            <span className="mr-2">•</span>
+            <span>{point}</span>
           </div>
-        </div>
-        {locked && (
-          <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-            </svg>
-          </div>
-        )}
+        ))}
       </div>
 
-      {/* Module Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
-          {module.title}
-        </h3>
-        <p className="text-blue-200 text-sm mb-3 line-clamp-2">
-          {module.description}
-        </p>
+      <div className="flex items-center justify-between">
+        <span className="text-green-400 font-semibold">{module.earnings}</span>
         
-        {/* Tools */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {module.tools.slice(0, 2).map((tool, idx) => (
-            <span key={idx} className="px-2 py-1 bg-blue-600 bg-opacity-50 text-blue-100 text-xs rounded">
-              {tool}
-            </span>
-          ))}
-          {module.tools.length > 2 && (
-            <span className="px-2 py-1 bg-gray-600 bg-opacity-50 text-gray-300 text-xs rounded">
-              +{module.tools.length - 2} more
-            </span>
-          )}
-        </div>
-
-        {/* Earnings */}
-        <div className="text-green-400 text-sm font-semibold mb-3">
-          💰 {module.earnings}
-        </div>
-
-        {/* Action Button */}
-        {locked ? (
-          <div className="text-center">
-            <span className="text-gray-400 text-sm">🔒 Purchase to Unlock</span>
-          </div>
+        {isLocked ? (
+          <button className="bg-gray-600 text-gray-400 px-4 py-2 rounded-lg cursor-not-allowed">
+            🔒 Locked
+          </button>
         ) : (
-          <Link href={`/modules/${moduleNumber}`}>
-            <a className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-center py-2 px-4 rounded-lg font-semibold transition-all duration-300">
+          <Link href={`/module/${module.id}`}>
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
               Start Module
-            </a>
+            </button>
           </Link>
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -5,11 +5,15 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/edited and compressed vids/:path*',
+        source: '/modules/:path*',
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'",
           },
         ],
       },

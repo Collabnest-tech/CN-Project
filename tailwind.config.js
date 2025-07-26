@@ -1,10 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss"
+import { fontFamily } from "tailwindcss/defaultTheme"
+
+const config = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
+    './src/pages/**/*.{ts,tsx}',
+    './src/components/**/*.{ts,tsx}',
+    './src/app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
   prefix: "",
@@ -70,12 +73,7 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        surface: {
-          DEFAULT: "hsl(var(--surface))",
-          foreground: "hsl(var(--surface-foreground))",
-          elevated: "hsl(var(--surface-elevated))",
-        },
-        // Brand colors for CollabNest
+        // CollabNest brand colors
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",
@@ -111,56 +109,10 @@ module.exports = {
         '8xl': ['6rem', { lineHeight: '1' }],
         '9xl': ['8rem', { lineHeight: '1' }],
       },
-      spacing: {
-        '4.5': '1.125rem',
-        '5.5': '1.375rem',
-        '6.5': '1.625rem',
-        '7.5': '1.875rem',
-        '8.5': '2.125rem',
-        '9.5': '2.375rem',
-        '10.5': '2.625rem',
-        '11.5': '2.875rem',
-        '12.5': '3.125rem',
-        '13': '3.25rem',
-        '15': '3.75rem',
-        '17': '4.25rem',
-        '18': '4.5rem',
-        '19': '4.75rem',
-        '21': '5.25rem',
-        '22': '5.5rem',
-        '23': '5.75rem',
-        '25': '6.25rem',
-        '26': '6.5rem',
-        '27': '6.75rem',
-        '29': '7.25rem',
-        '30': '7.5rem',
-      },
-      boxShadow: {
-        'xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'sm': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'DEFAULT': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'md': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        'lg': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-        'xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-        '2xl': '0 50px 100px -20px rgb(0 0 0 / 0.25)',
-        'inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
-        'glow': '0 0 20px rgb(var(--primary) / 0.3)',
-        'glow-lg': '0 0 40px rgb(var(--primary) / 0.4)',
-      },
-      zIndex: {
-        '1': '1',
-        '2': '2',
-        '3': '3',
-        '4': '4',
-        '5': '5',
-        'dropdown': '1000',
-        'sticky': '1020',
-        'fixed': '1030',
-        'modal-backdrop': '1040',
-        'modal': '1050',
-        'popover': '1060',
-        'tooltip': '1070',
-        'toast': '1080',
+      screens: {
+        'xs': '475px',
+        '3xl': '1680px',
+        '4xl': '2048px',
       },
       animation: {
         "fade-in": "fade-in 0.5s ease-in-out",
@@ -169,12 +121,8 @@ module.exports = {
         "slide-out": "slide-out 0.3s ease-in",
         "scale-in": "scale-in 0.2s ease-out",
         "scale-out": "scale-out 0.2s ease-in",
-        "bounce-subtle": "bounce-subtle 2s infinite",
-        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "collapsible-down": "collapsible-down 0.2s ease-out",
-        "collapsible-up": "collapsible-up 0.2s ease-out",
       },
       keyframes: {
         "fade-in": {
@@ -201,10 +149,6 @@ module.exports = {
           "0%": { transform: "scale(1)", opacity: "1" },
           "100%": { transform: "scale(0.95)", opacity: "0" },
         },
-        "bounce-subtle": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-4px)" },
-        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -213,24 +157,6 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "collapsible-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-collapsible-content-height)" },
-        },
-        "collapsible-up": {
-          from: { height: "var(--radix-collapsible-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      transitionTimingFunction: {
-        'bounce-gentle': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'ease-out-quart': 'cubic-bezier(0.25, 1, 0.5, 1)',
-        'ease-in-quart': 'cubic-bezier(0.5, 0, 0.75, 0)',
-      },
-      screens: {
-        'xs': '475px',
-        '3xl': '1680px',
-        '4xl': '2048px',
       },
     },
   },
@@ -238,6 +164,7 @@ module.exports = {
     require("tailwindcss-animate"),
     require("@tailwindcss/typography"),
     require("@tailwindcss/forms"),
+    require("@tailwindcss/container-queries"),
   ],
 } satisfies Config
 

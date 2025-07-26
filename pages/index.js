@@ -1,17 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useSwipeable } from 'react-swipeable'
 import { supabase } from '../lib/supabase'
-import { loadStripe } from '@stripe/stripe-js'
 import { moduleData, courseData } from '../lib/moduleData'
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+import { useSwipeable } from 'react-swipeable'
 
 export default function Home() {
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
   const [current, setCurrent] = useState(0)
+  const [referralCode, setReferralCode] = useState('')
 
   useEffect(() => {
     checkUserSession()
@@ -40,47 +38,39 @@ export default function Home() {
 
   async function handlePurchase() {
     if (!session) {
-      window.location.href = '/login'
-      return
-    }
-
-    const stripe = await stripePromise
-    const res = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
-        userId: session.user.id
-      })
-    })
-    
-    if (!res.ok) {
-      alert('Failed to start checkout.')
+      alert('Please log in to purchase the course.')
       return
     }
     
-    const { sessionId } = await res.json()
-    stripe.redirectToCheckout({ sessionId })
+    const price = referralCode.trim() ? courseData.discountPrice : courseData.price
+    // Redirect to checkout with price
+    window.location.href = `/checkout?price=${price}&referral=${referralCode}`
   }
 
   const carouselItems = [
     {
-      title: "Master AI Tools for Income",
-      description: "Learn ChatGPT, MidJourney & 20+ AI tools to build multiple income streams",
-      img: "/hero-images/ai-tools.jpg",
-      icon: "🤖"
+      title: "Don't Miss the AI Revolution",
+      description: "You missed Crypto, NFTs, and Forex. Don't miss the AI wave that's creating millionaires",
+      img: "/carousel/ai-revolution.jpg",
+      icon: "🚀"
     },
     {
-      title: "Real Income Potential",
-      description: "$100-5000/month with proven AI strategies and automation",
-      img: "/hero-images/income.jpg", 
+      title: "From Poverty to Prosperity",
+      description: "Our mission: Elevate people out of poverty through AI-powered income streams",
+      img: "/carousel/prosperity.jpg",
       icon: "💰"
     },
     {
-      title: "Step-by-Step Learning",
-      description: "8 comprehensive modules with practical, actionable content",
-      img: "/hero-images/learning.jpg",
-      icon: "📚"
+      title: "Expert Team, Proven Results",
+      description: "Led by Durham University Software Developer & Senior Project Manager",
+      img: "/carousel/team.jpg",
+      icon: "👥"
+    },
+    {
+      title: "Not Just a Course - A Lifeline",
+      description: "This isn't education, it's transformation. Your pathway to financial freedom",
+      img: "/carousel/transformation.jpg",
+      icon: "✨"
     }
   ]
 
@@ -96,15 +86,39 @@ export default function Home() {
       <div className="absolute top-6 left-8 z-10">
         <Image
           src="/logo.jpeg"
-          alt="Collabnest Logo"
+          alt="Collab-Nest Logo"
           width={90}
           height={90}
           className="rounded-full shadow-lg"
         />
       </div>
 
+      {/* Mission Statement */}
+      <div className="max-w-4xl mx-auto text-center mb-16 pt-16">
+        <div className="bg-gradient-to-r from-red-900 to-orange-900 rounded-xl p-8 mb-8">
+          <h2 className="text-3xl font-bold text-white mb-4">⚠️ URGENT: Don't Miss Out Again</h2>
+          <p className="text-xl text-orange-200 mb-4">
+            You missed the Crypto boom. You missed NFTs. You missed Forex profits.
+          </p>
+          <p className="text-2xl font-bold text-yellow-300">
+            DON'T MISS THE AI REVOLUTION! 🤖
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-8 mb-8">
+          <h2 className="text-3xl font-bold text-white mb-4">Our Mission: Your Freedom</h2>
+          <p className="text-xl text-blue-200 mb-4">
+            Led by a <strong>Durham University Software Developer</strong> and <strong>Senior Project Manager</strong>,
+            we're on a mission to elevate people out of poverty through AI-powered income generation.
+          </p>
+          <p className="text-lg text-blue-300">
+            This isn't just a course - it's your lifeline to financial independence.
+          </p>
+        </div>
+      </div>
+
       {/* Hero Section */}
-      <div className="max-w-6xl mx-auto text-center mb-16 pt-16">
+      <div className="max-w-6xl mx-auto text-center mb-16">
         <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-lg">
           Make Money Online<br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
@@ -112,8 +126,32 @@ export default function Home() {
           </span>
         </h1>
         <p className="text-xl md:text-2xl text-blue-200 mb-8 font-medium max-w-3xl mx-auto">
-          Master ChatGPT, MidJourney &amp; 20+ AI tools to build multiple passive income streams
+          Master ChatGPT, MidJourney & 20+ AI tools to build multiple passive income streams
         </p>
+        
+        {/* Pricing Section */}
+        <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-8 mb-8 max-w-2xl mx-auto">
+          <div className="text-center">
+            <div className="text-6xl font-bold text-white mb-4">
+              <span className="line-through text-gray-400 text-3xl">${courseData.price}</span>
+              <span className="text-green-400 ml-4">${courseData.discountPrice}</span>
+            </div>
+            <p className="text-green-200 mb-4">Special launch price with referral code</p>
+            
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Enter referral code for $5 off"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg mr-2"
+              />
+              <span className="text-blue-300 text-sm">
+                {referralCode.trim() ? `Final Price: $${courseData.discountPrice}` : `Price: $${courseData.price}`}
+              </span>
+            </div>
+          </div>
+        </div>
         
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -129,7 +167,7 @@ export default function Home() {
                 onClick={handlePurchase}
                 className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105"
               >
-                🚀 Start Learning - ${courseData.price}
+                🚀 Start Learning - ${referralCode.trim() ? courseData.discountPrice : courseData.price}
               </button>
               <Link href="/courses">
                 <a className="border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300">
@@ -209,24 +247,15 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Social Proof */}
+      {/* Social Proof - Single Counter */}
       <div className="max-w-4xl mx-auto text-center mb-16">
         <h2 className="text-3xl font-bold text-white mb-8">
           Join Thousands Learning AI
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/*
-            { number: "5000+", label: "Students Enrolled", icon: "👥" },
-            { number: "8", label: "Comprehensive Modules", icon: "📚" },
-            { number: "20+", label: "AI Tools Covered", icon: "🛠️" }
-          */}
-          {Array.from({ length: 3 }).map((_, idx) => (
-            <div key={idx} className="bg-[#181e29] rounded-xl p-6">
-              <div className="text-4xl mb-2">📈</div>
-              <div className="text-3xl font-bold text-blue-400 mb-2">5000+</div>
-              <div className="text-blue-200">Students Enrolled</div>
-            </div>
-          ))}
+        <div className="bg-[#181e29] rounded-xl p-8">
+          <div className="text-6xl mb-4">👥</div>
+          <div className="text-4xl font-bold text-blue-400 mb-2">5,000+</div>
+          <div className="text-xl text-blue-200">Students Enrolled</div>
         </div>
       </div>
 
@@ -243,10 +272,10 @@ export default function Home() {
             onClick={handlePurchase}
             className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-12 py-4 rounded-xl font-bold text-xl transition-all duration-300 transform hover:scale-105"
           >
-            🚀 Get Started Now - ${courseData.price}
+            🚀 Get Started Now - ${referralCode.trim() ? courseData.discountPrice : courseData.price}
           </button>
           <p className="text-green-300 text-sm mt-4">
-            ✓ Lifetime Access ✓ 30-Day Money Back Guarantee ✓ Instant Download
+            ✓ Lifetime Access ✓ Instant Download ✓ Expert Support
           </p>
         </div>
       )}

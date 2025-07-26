@@ -17,27 +17,35 @@
             --background-color: #f0f4f8;  /* New light grayish blue */
         }
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
-            width: 1920px;
-            height: 1080px;
             overflow: hidden;
-            font-family: 'Poppins', sans-serif;
-            background: var(--background-color);
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            transform-origin: top left;
         }
 
         .presentation-container {
             display: flex;
+            flex-direction: row;
             width: 1920px;
             height: 1080px;
+            background: var(--background-color);
+            transform-origin: top left;
+            /* Remove any position: absolute, top, left */
         }
 
         .video-section {
             width: 720px;
             height: 1080px;
             background: #000;
-            position: relative;
+            position: relative; /* needed for subtitles overlay */
+            flex-shrink: 0;
+            order: 0; /* always first (left) */
         }
 
         video {
@@ -86,6 +94,8 @@
             padding: 40px;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
+            order: 1; /* always second (right) */
         }
 
         .slide {
@@ -97,6 +107,7 @@
             padding: 40px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             overflow: hidden;
+            border: 2px solid red; /* Add this for debugging */
         }
 
         .slide::before {
@@ -112,13 +123,13 @@
         }
 
         .slide h2 {
-            font-size: 48px;
+            font-size: 48px; /* good */
             color: var(--primary-color);
             margin-bottom: 30px;
         }
 
         .slide ul {
-            font-size: 32px;
+            font-size: 32px; /* good */
             line-height: 1.6;
             color: var(--text-color);
         }
@@ -519,15 +530,18 @@
 
         // Create and update slides
         function updateSlides(currentTime) {
+            console.log('updateSlides called with time:', currentTime);
             const slideData = transcript.find(item => 
                 currentTime >= item.startTime && currentTime <= item.endTime
             );
+            console.log('slideData found:', slideData);
 
             // Only create new slide if it's different from current slide
             if (slideData && slideData.slideContent) {
                 const slideId = `${slideData.startTime}-${slideData.endTime}`;
                 if (slideId !== currentSlideId) {
                     currentSlideId = slideId;
+                    console.log('Creating slide:', slideData.slideContent.title);
                     createSlide(slideData.slideContent);
                 }
             }
@@ -671,6 +685,50 @@
                 });
             }
         });
+
+        function scaleToFit() {
+            const container = document.querySelector('.presentation-container') || document.body;
+            
+            // Your original design dimensions
+            const originalWidth = 1920;
+            const originalHeight = 1080;
+            
+            // Get current window size
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Calculate scale factor
+            const scaleX = windowWidth / originalWidth;
+            const scaleY = windowHeight / originalHeight;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Set container to original size first
+            container.style.width = originalWidth + 'px';
+            container.style.height = originalHeight + 'px';
+            
+            // Then apply scale transform
+            container.style.transform = `scale(${scale})`;
+            
+            // Make sure container is visible
+            container.style.visibility = 'visible';
+            container.style.display = 'block';
+            
+            // Adjust body to accommodate scaled content
+            document.body.style.width = (originalWidth * scale) + 'px';
+            document.body.style.height = (originalHeight * scale) + 'px';
+        }
+
+        // Scale on load and resize
+        window.addEventListener('load', scaleToFit);
+        window.addEventListener('resize', scaleToFit);
+
+        // Ensure it runs after DOM is ready
+        document.addEventListener('DOMContentLoaded', scaleToFit);
+
+        // Initial scale
+        setTimeout(scaleToFit, 100);
+
+        // Show the
     </script>
 </body>
 </html>

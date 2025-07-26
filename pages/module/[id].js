@@ -2,12 +2,15 @@ import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import { moduleData } from '../../lib/moduleData'
 import Link from 'next/link'
+import Quiz from '../../components/Quiz'
 
 export default function ModulePage() {
   const router = useRouter()
   const { id } = router.query
   const [module, setModule] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showQuiz, setShowQuiz] = useState(false)
+  const [videoEnded, setVideoEnded] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -21,6 +24,10 @@ export default function ModulePage() {
     setIsFullscreen(!isFullscreen)
   }
 
+  const handleVideoEnded = () => {
+    setVideoEnded(true)
+  }
+
   if (!module) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] flex items-center justify-center">
@@ -29,9 +36,25 @@ export default function ModulePage() {
     )
   }
 
+  if (showQuiz) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => setShowQuiz(false)}
+            className="text-blue-400 hover:text-blue-300 mb-6"
+          >
+            ← Back to Module
+          </button>
+          <Quiz moduleId={module.id} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Back Button */}
         <Link href="/courses">
           <a className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
@@ -55,10 +78,10 @@ export default function ModulePage() {
           </div>
         </div>
 
-        {/* Interactive HTML Module Content */}
+        {/* Video Player */}
         <div className="bg-[#181e29] rounded-xl overflow-hidden mb-8">
           <div className="p-4 bg-[#232a39] flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">Module Content</h3>
+            <h3 className="text-lg font-semibold text-white">Module Video</h3>
             <button
               onClick={toggleFullscreen}
               className="text-blue-400 hover:text-blue-300 transition-colors px-3 py-1 rounded-md hover:bg-blue-600 hover:bg-opacity-20"
@@ -78,15 +101,31 @@ export default function ModulePage() {
               </button>
             )}
             
-            {/* Fixed iframe with proper sandbox attributes */}
-            <iframe
-              src={`/modules/mod${module.id}.html`}
-              className={`w-full border-0 ${isFullscreen ? 'h-full' : 'h-96 lg:h-[600px]'}`}
-              title={`Module ${module.id} Interactive Content`}
-              allow="autoplay; fullscreen; microphone; camera"
-              referrerPolicy="same-origin"
-            />
+            <video
+              controls
+              className={`w-full ${isFullscreen ? 'h-full object-contain' : 'aspect-video'}`}
+              onEnded={handleVideoEnded}
+              preload="metadata"
+            >
+              <source src={`/modules/Mod${module.id}.mp4`} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
+        </div>
+
+        {/* Quiz Button */}
+        <div className="text-center mb-8">
+          <button
+            onClick={() => setShowQuiz(true)}
+            className={`px-8 py-4 rounded-lg font-bold text-lg transition-all ${
+              videoEnded 
+                ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white transform hover:scale-105'
+                : 'bg-gray-600 text-gray-300'
+            }`}
+            disabled={!videoEnded}
+          >
+            {videoEnded ? '🎯 Take Module Quiz' : '📹 Complete Video to Unlock Quiz'}
+          </button>
         </div>
 
         {/* Tools Section */}

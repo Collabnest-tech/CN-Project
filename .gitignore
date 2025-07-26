@@ -10,3 +10,6 @@ node_modules/
 
 # Optional: local VSCode settings
 .vscode/
+
+*storybook.log
+storybook-static

@@ -42,11 +42,17 @@ export default function ModulePage() {
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => setShowQuiz(false)}
-            className="text-blue-400 hover:text-blue-300 mb-6"
+            className="text-blue-400 hover:text-blue-300 mb-6 flex items-center"
           >
             ← Back to Module
           </button>
-          <Quiz moduleId={module.id} />
+          <Quiz 
+            moduleId={module.id} 
+            onComplete={(score, total) => {
+              // You can add completion logic here
+              console.log(`Quiz completed: ${score}/${total}`)
+            }}
+          />
         </div>
       </div>
     )

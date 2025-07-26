@@ -16,7 +16,7 @@ export default function ModuleCard({ moduleNumber, locked, userPaid }) {
       <div className="relative h-32 bg-gradient-to-r from-blue-600 to-purple-600">
         {!imageError && (
           <img 
-            src={`/module-thumbnails/mod${moduleNumber}.jpg`}
+            src={module.thumbnail}
             alt={module.title}
             className="w-full h-full object-cover"
             onError={() => setImageError(true)}

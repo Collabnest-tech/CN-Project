@@ -7,6 +7,8 @@ export default function ModulePage() {
   const router = useRouter()
   const { id } = router.query
   const [module, setModule] = useState(null)
+  const [isVideoFullscreen, setIsVideoFullscreen] = useState(false)
+  const [isHtmlFullscreen, setIsHtmlFullscreen] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -15,6 +17,14 @@ export default function ModulePage() {
       setModule(foundModule)
     }
   }, [id])
+
+  const toggleVideoFullscreen = () => {
+    setIsVideoFullscreen(!isVideoFullscreen)
+  }
+
+  const toggleHtmlFullscreen = () => {
+    setIsHtmlFullscreen(!isHtmlFullscreen)
+  }
 
   if (!module) {
     return (
@@ -26,7 +36,7 @@ export default function ModulePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <Link href="/courses">
           <a className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6">
@@ -50,13 +60,70 @@ export default function ModulePage() {
           </div>
         </div>
 
-        {/* Video Placeholder */}
-        <div className="bg-[#181e29] rounded-xl p-8 mb-8">
-          <div className="aspect-video bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mb-4">
-            <div className="text-center text-white">
-              <div className="text-6xl mb-4">🎬</div>
-              <h3 className="text-xl font-bold">Video Content Coming Soon</h3>
-              <p className="text-blue-200">Module {module.id} video will be available here</p>
+        {/* Video and HTML Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          
+          {/* Video Player Section */}
+          <div className="bg-[#181e29] rounded-xl overflow-hidden">
+            <div className="p-4 bg-[#232a39] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">Module Video</h3>
+              <button
+                onClick={toggleVideoFullscreen}
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+                title="Toggle Fullscreen"
+              >
+                {isVideoFullscreen ? '🗗' : '⛶'}
+              </button>
+            </div>
+            <div className={`${isVideoFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative'}`}>
+              {isVideoFullscreen && (
+                <button
+                  onClick={toggleVideoFullscreen}
+                  className="absolute top-4 right-4 z-10 text-white text-2xl hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              )}
+              <video
+                controls
+                className={`w-full ${isVideoFullscreen ? 'h-full' : 'h-64 lg:h-80'} object-cover`}
+                src={module.videoPath}
+                poster={module.thumbnail}
+              >
+                <source src={module.videoPath} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+
+          {/* Interactive HTML Presentation */}
+          <div className="bg-[#181e29] rounded-xl overflow-hidden">
+            <div className="p-4 bg-[#232a39] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">Interactive Slides</h3>
+              <button
+                onClick={toggleHtmlFullscreen}
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+                title="Toggle Fullscreen"
+              >
+                {isHtmlFullscreen ? '🗗' : '⛶'}
+              </button>
+            </div>
+            <div className={`${isHtmlFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative'}`}>
+              {isHtmlFullscreen && (
+                <button
+                  onClick={toggleHtmlFullscreen}
+                  className="absolute top-4 right-4 z-10 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              )}
+              <iframe
+                src={module.htmlPath}
+                className={`w-full border-0 ${isHtmlFullscreen ? 'h-full' : 'h-64 lg:h-80'}`}
+                title={`Module ${module.id} Interactive Presentation`}
+                sandbox="allow-scripts allow-same-origin"
+                allow="autoplay; fullscreen"
+              />
             </div>
           </div>
         </div>

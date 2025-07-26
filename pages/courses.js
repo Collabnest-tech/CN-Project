@@ -16,6 +16,25 @@ export default function Courses() {
     checkUserSession()
   }, [])
 
+  useEffect(() => {
+    // Check if user has paid for course access
+    const checkUserAccess = async () => {
+      if (session?.user?.id) {
+        // Your existing payment check logic
+        const { data, error } = await supabase
+          .from('users')
+          .select('has_paid')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (!error && data) {
+          setUserPaid(data.has_paid)
+        }
+      }
+    }
+    checkUserAccess()
+  }, [session])
+
   async function checkUserSession() {
     const { data: { session } } = await supabase.auth.getSession()
     setSession(session)

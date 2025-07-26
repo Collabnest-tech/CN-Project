@@ -1,4 +1,20 @@
 /** @type {import('next').NextConfig} */
-module.exports = {
-  reactStrictMode: true
-};
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  async headers() {
+    return [
+      {
+        source: '/edited and compressed vids/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
+  },
+}
+
+module.exports = nextConfig

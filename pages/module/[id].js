@@ -8,7 +8,6 @@ export default function ModulePage() {
   const { id } = router.query
   const [module, setModule] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [iframeError, setIframeError] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -79,25 +78,14 @@ export default function ModulePage() {
               </button>
             )}
             
-            {!iframeError ? (
-              <iframe
-                src={`/modules/mod${module.id}.html`}
-                className={`w-full border-0 ${isFullscreen ? 'h-full' : 'h-96 lg:h-[600px]'}`}
-                title={`Module ${module.id} Interactive Content`}
-                sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"
-                allow="autoplay; fullscreen; microphone; camera"
-                onError={() => setIframeError(true)}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-96 bg-gray-800">
-                <div className="text-center text-white">
-                  <div className="text-4xl mb-4">📹</div>
-                  <h3 className="text-xl font-bold mb-2">Module Content Loading</h3>
-                  <p className="text-gray-300">HTML presentation will appear here</p>
-                  <p className="text-sm text-gray-400 mt-2">File: /modules/mod{module.id}.html</p>
-                </div>
-              </div>
-            )}
+            {/* Fixed iframe with proper sandbox attributes */}
+            <iframe
+              src={`/modules/mod${module.id}.html`}
+              className={`w-full border-0 ${isFullscreen ? 'h-full' : 'h-96 lg:h-[600px]'}`}
+              title={`Module ${module.id} Interactive Content`}
+              allow="autoplay; fullscreen; microphone; camera"
+              referrerPolicy="same-origin"
+            />
           </div>
         </div>
 

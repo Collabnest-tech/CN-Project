@@ -9,18 +9,54 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, currency, customerInfo, referralCode, userId } = req.body
+    const { priceId, customerInfo, referralCode, userId } = req.body
+
+    if (!priceId) {
+      return res.status(400).json({ error: 'Price ID is required' })
+    }
+
+    // Get the price from Stripe
+    const price = await stripe.prices.retrieve(priceId)
+    
+    if (!price.active) {
+      return res.status(400).json({ error: 'Price is not active' })
+    }
+
+    let finalAmount = price.unit_amount
+    let validReferralCode = null
+
+    // Apply referral discount if provided and valid
+    if (referralCode && referralCode.trim()) {
+      // Verify referral code exists and belongs to a user who has paid
+      const { data: referrer, error: referrerError } = await supabase
+        .from('users')
+        .select('id, referral_code, has_paid')
+        .eq('referral_code', referralCode.trim().toUpperCase())
+        .eq('has_paid', true) // Only paid users have active referral codes
+        .single()
+
+      if (!referrerError && referrer) {
+        // Apply $5 discount (500 cents)
+        finalAmount = Math.max(finalAmount - 500, 500) // Minimum $5
+        validReferralCode = referralCode.trim().toUpperCase()
+        console.log(`Valid referral code applied: ${validReferralCode}`)
+      } else {
+        console.log(`Invalid referral code: ${referralCode}`)
+      }
+    }
 
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
+      amount: finalAmount,
+      currency: price.currency,
       metadata: {
         userId,
-        referralCode: referralCode || '',
+        referralCode: validReferralCode || '',
         customerEmail: customerInfo.email,
         customerName: customerInfo.fullName,
-        country: customerInfo.country
+        country: customerInfo.country,
+        originalPriceId: priceId,
+        discountApplied: finalAmount < price.unit_amount ? 'true' : 'false'
       },
       receipt_email: customerInfo.email,
     })
@@ -31,21 +67,25 @@ export default async function handler(req, res) {
       .insert({
         user_id: userId,
         stripe_payment_intent_id: paymentIntent.id,
-        amount: amount / 100, // Convert cents to dollars
-        currency,
+        stripe_price_id: priceId,
+        amount: finalAmount / 100,
+        original_amount: price.unit_amount / 100,
+        currency: price.currency,
         status: 'pending',
-        referral_code: referralCode || null,
+        referral_code: validReferralCode,
         customer_info: customerInfo,
         created_at: new Date().toISOString()
       })
 
     if (dbError) {
       console.error('Database error:', dbError)
-      // Continue anyway, we can update later via webhook
     }
 
     res.status(200).json({
-      client_secret: paymentIntent.client_secret
+      client_secret: paymentIntent.client_secret,
+      amount: finalAmount / 100,
+      currency: price.currency.toUpperCase(),
+      discount_applied: finalAmount < price.unit_amount
     })
 
   } catch (error) {

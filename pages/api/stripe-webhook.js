@@ -18,6 +18,10 @@ async function buffer(readable) {
   return Buffer.concat(chunks)
 }
 
+function generateReferralCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -34,7 +38,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Webhook signature verification failed' })
   }
 
-  // Handle the event
   switch (event.type) {
     case 'payment_intent.succeeded':
       await handlePaymentSuccess(event.data.object)
@@ -55,11 +58,15 @@ async function handlePaymentSuccess(paymentIntent) {
 
     console.log('Processing payment success for user:', userId)
 
-    // Update user payment status
+    // Generate referral code for this user (first purchase)
+    const userReferralCode = generateReferralCode()
+
+    // Update user payment status AND generate their referral code
     const { error: userError } = await supabase
       .from('users')
       .update({ 
         has_paid: true,
+        referral_code: userReferralCode, // NOW they get a referral code
         payment_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -68,7 +75,7 @@ async function handlePaymentSuccess(paymentIntent) {
     if (userError) {
       console.error('Error updating user payment status:', userError)
     } else {
-      console.log('Successfully updated user payment status for:', userId)
+      console.log('Successfully updated user payment status and generated referral code for:', userId)
     }
 
     // Update transaction status
@@ -82,11 +89,9 @@ async function handlePaymentSuccess(paymentIntent) {
 
     if (transactionError) {
       console.error('Error updating transaction:', transactionError)
-    } else {
-      console.log('Successfully updated transaction status for:', paymentIntent.id)
     }
 
-    // Handle referral commission if referral code exists
+    // Handle referral commission if referral code was used
     if (referralCode && referralCode.trim()) {
       await processReferralCommission(referralCode, userId, paymentIntent.amount / 100)
     }
@@ -98,43 +103,20 @@ async function handlePaymentSuccess(paymentIntent) {
   }
 }
 
-async function handlePaymentFailure(paymentIntent) {
-  try {
-    console.log('Processing payment failure for:', paymentIntent.id)
-
-    // Update transaction status
-    const { error } = await supabase
-      .from('transactions')
-      .update({ 
-        status: 'failed',
-        failed_at: new Date().toISOString()
-      })
-      .eq('stripe_payment_intent_id', paymentIntent.id)
-
-    if (error) {
-      console.error('Error updating failed transaction:', error)
-    } else {
-      console.log('Successfully updated failed transaction:', paymentIntent.id)
-    }
-
-  } catch (error) {
-    console.error('Error handling payment failure:', error)
-  }
-}
-
 async function processReferralCommission(referralCode, purchaserUserId, amount) {
   try {
     console.log('Processing referral commission for code:', referralCode)
 
-    // Find the referrer
+    // Find the referrer (must have has_paid = true to have a valid referral code)
     const { data: referrer, error: referrerError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, referral_code, has_paid')
       .eq('referral_code', referralCode)
+      .eq('has_paid', true) // Only users who have paid can have valid referral codes
       .single()
 
     if (referrerError || !referrer) {
-      console.error('Referrer not found for code:', referralCode)
+      console.error('Valid referrer not found for code:', referralCode)
       return
     }
 
@@ -160,5 +142,26 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
 
   } catch (error) {
     console.error('Error processing referral commission:', error)
+  }
+}
+
+async function handlePaymentFailure(paymentIntent) {
+  try {
+    console.log('Processing payment failure for:', paymentIntent.id)
+
+    const { error } = await supabase
+      .from('transactions')
+      .update({ 
+        status: 'failed',
+        failed_at: new Date().toISOString()
+      })
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+
+    if (error) {
+      console.error('Error updating failed transaction:', error)
+    }
+
+  } catch (error) {
+    console.error('Error handling payment failure:', error)
   }
 }

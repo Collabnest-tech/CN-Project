@@ -13,10 +13,6 @@ export default function Register() {
   const [message, setMessage] = useState('')
   const router = useRouter()
 
-  function generateReferralCode() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase()
-  }
-
   async function handleSignUp(e) {
     e.preventDefault()
     
@@ -51,10 +47,7 @@ export default function Register() {
       }
 
       if (authData.user) {
-        // Generate referral code
-        const referralCode = generateReferralCode()
-
-        // Insert user data into custom users table
+        // Insert user data into custom users table WITHOUT referral code
         const { error: insertError } = await supabase
           .from('users')
           .insert({
@@ -62,19 +55,17 @@ export default function Register() {
             email: authData.user.email,
             full_name: fullName,
             has_paid: false,
-            referral_code: referralCode,
+            referral_code: null, // No referral code until they purchase
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
 
         if (insertError) {
           console.error('Error inserting user data:', insertError)
-          // Don't throw error here, auth was successful
         }
 
         setMessage('Registration successful! Please check your email to verify your account.')
         
-        // Redirect after 3 seconds
         setTimeout(() => {
           router.push('/login')
         }, 3000)

@@ -10,122 +10,7 @@ import Image from 'next/image'
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 const countries = [
-  'United States',
-  'Canada', 
-  'United Kingdom',
-  'Australia',
-  'Germany',
-  'France',
-  'Spain',
-  'Italy',
-  'Netherlands',
-  'Belgium',
-  'Sweden',
-  'Norway',
-  'Denmark',
-  'Finland',
-  'Austria',
-  'Switzerland',
-  'Ireland',
-  'Portugal',
-  'Poland',
-  'Czech Republic',
-  'Hungary',
-  'Slovenia',
-  'Slovakia',
-  'Estonia',
-  'Latvia',
-  'Lithuania',
-  'Luxembourg',
-  'Malta',
-  'Cyprus',
-  'Greece',
-  'Bulgaria',
-  'Romania',
-  'Croatia',
-  'Japan',
-  'Singapore',
-  'Hong Kong',
-  'New Zealand',
-  'South Korea',
-  'Taiwan',
-  'Israel',
-  'United Arab Emirates',
-  'Saudi Arabia',
-  'Kuwait',
-  'Qatar',
-  'Bahrain',
-  'Oman',
-  'Jordan',
-  'Lebanon',
-  'Egypt',
-  'South Africa',
-  'Kenya',
-  'Nigeria',
-  'Ghana',
-  'Morocco',
-  'Tunisia',
-  'Algeria',
-  'Brazil',
-  'Mexico',
-  'Argentina',
-  'Chile',
-  'Colombia',
-  'Peru',
-  'Uruguay',
-  'Paraguay',
-  'Bolivia',
-  'Ecuador',
-  'Venezuela',
-  'Costa Rica',
-  'Panama',
-  'Guatemala',
-  'Honduras',
-  'El Salvador',
-  'Nicaragua',
-  'Dominican Republic',
-  'Jamaica',
-  'Trinidad and Tobago',
-  'Barbados',
-  'Bahamas',
-  'India',
-  'Malaysia',
-  'Thailand',
-  'Philippines',
-  'Indonesia',
-  'Vietnam',
-  'Cambodia',
-  'Laos',
-  'Myanmar',
-  'Bangladesh',
-  'Sri Lanka',
-  'Nepal',
-  'Bhutan',
-  'Maldives',
-  'Pakistan',
-  'Afghanistan',
-  'Kazakhstan',
-  'Uzbekistan',
-  'Kyrgyzstan',
-  'Tajikistan',
-  'Turkmenistan',
-  'Mongolia',
-  'China',
-  'Russia',
-  'Ukraine',
-  'Belarus',
-  'Moldova',
-  'Georgia',
-  'Armenia',
-  'Azerbaijan',
-  'Turkey',
-  'Cyprus',
-  'Albania',
-  'Bosnia and Herzegovina',
-  'Montenegro',
-  'Serbia',
-  'North Macedonia',
-  'Kosovo'
+  'United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Spain', 'Italy', 'Netherlands', 'Belgium', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Austria', 'Switzerland', 'Ireland', 'Portugal', 'Poland', 'Czech Republic', 'Hungary', 'Slovenia', 'Slovakia', 'Estonia', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Cyprus', 'Greece', 'Bulgaria', 'Romania', 'Croatia', 'Japan', 'Singapore', 'Hong Kong', 'New Zealand', 'South Korea', 'Taiwan', 'Israel', 'United Arab Emirates', 'Saudi Arabia', 'Kuwait', 'Qatar', 'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Egypt', 'South Africa', 'Kenya', 'Nigeria', 'Ghana', 'Morocco', 'Tunisia', 'Algeria', 'Brazil', 'Mexico', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Uruguay', 'Paraguay', 'Bolivia', 'Ecuador', 'Venezuela', 'Costa Rica', 'Panama', 'Guatemala', 'Honduras', 'El Salvador', 'Nicaragua', 'Dominican Republic', 'Jamaica', 'Trinidad and Tobago', 'Barbados', 'Bahamas', 'India', 'Malaysia', 'Thailand', 'Philippines', 'Indonesia', 'Vietnam', 'Cambodia', 'Laos', 'Myanmar', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Bhutan', 'Maldives', 'Pakistan', 'Afghanistan', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan', 'Turkmenistan', 'Mongolia', 'China', 'Russia', 'Ukraine', 'Belarus', 'Moldova', 'Georgia', 'Armenia', 'Azerbaijan', 'Turkey', 'Cyprus', 'Albania', 'Bosnia and Herzegovina', 'Montenegro', 'Serbia', 'North Macedonia', 'Kosovo'
 ].sort()
 
 function CheckoutForm() {
@@ -135,6 +20,7 @@ function CheckoutForm() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [courseData, setCourseData] = useState(null)
   const [customerInfo, setCustomerInfo] = useState({
     email: '',
     fullName: '',
@@ -144,11 +30,13 @@ function CheckoutForm() {
     postalCode: ''
   })
 
-  const { price = '15', referral = '' } = router.query
-  const finalPrice = parseFloat(price)
+  const { priceId, referral = '', finalPrice } = router.query
 
   useEffect(() => {
-    checkUserSession()
+    Promise.all([
+      checkUserSession(),
+      fetchCourseData()
+    ])
   }, [])
 
   async function checkUserSession() {
@@ -169,10 +57,21 @@ function CheckoutForm() {
         .single()
       
       if (!error && data && data.has_paid) {
-        // User already paid, redirect to courses
         router.push('/courses')
         return
       }
+    }
+  }
+
+  async function fetchCourseData() {
+    try {
+      const response = await fetch('/api/get-product-info')
+      if (response.ok) {
+        const data = await response.json()
+        setCourseData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching course data:', error)
     }
   }
 
@@ -193,26 +92,30 @@ function CheckoutForm() {
       return
     }
 
+    if (!courseData || !courseData.price) {
+      setError('Course pricing not available. Please refresh the page.')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      // Create payment intent
+      // Create payment intent using the price ID from Stripe
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: finalPrice * 100, // Convert to cents
-          currency: 'usd',
+          priceId: courseData.price.id,
           customerInfo,
           referralCode: referral,
           userId: session.user.id
         }),
       })
 
-      const { client_secret, error: backendError } = await response.json()
+      const { client_secret, error: backendError, amount } = await response.json()
 
       if (backendError) {
         setError(backendError)
@@ -303,6 +206,8 @@ function CheckoutForm() {
     hidePostalCode: true
   }
 
+  const displayPrice = finalPrice || courseData?.price?.amount || 'Loading...'
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
       <div className="max-w-sm mx-auto">
@@ -323,8 +228,8 @@ function CheckoutForm() {
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-bold text-white mb-4">Order Summary</h2>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-blue-200">AI for Making Money Online</span>
-            <span className="text-white font-bold">${finalPrice}</span>
+            <span className="text-blue-200">{courseData?.name || 'AI for Making Money Online'}</span>
+            <span className="text-white font-bold">${displayPrice}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-blue-200">8 Complete Modules</span>
@@ -341,7 +246,7 @@ function CheckoutForm() {
           <div className="border-t border-gray-600 pt-2 mt-4">
             <div className="flex justify-between items-center text-lg font-bold">
               <span className="text-white">Total</span>
-              <span className="text-green-400">${finalPrice}</span>
+              <span className="text-green-400">${displayPrice}</span>
             </div>
           </div>
         </div>
@@ -464,7 +369,7 @@ function CheckoutForm() {
                 : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
             }`}
           >
-            {loading ? 'Processing Payment...' : `Complete Purchase - $${finalPrice}`}
+            {loading ? 'Processing Payment...' : `Complete Purchase - $${displayPrice}`}
           </button>
 
           <div className="text-center text-xs text-gray-400">

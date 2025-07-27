@@ -276,18 +276,18 @@ export default function Home() {
                 {/* Responsive Image */}
                 <div className="order-first lg:order-last">
                   <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
-                    <Image
+                    <img
                       src={carouselItems[current].img}
                       alt={carouselItems[current].title}
-                      fill
-                      className="rounded-xl shadow-lg object-cover"
+                      className="w-full h-full rounded-xl shadow-lg object-cover"
                       onError={(e) => {
+                        console.log('Image failed to load:', carouselItems[current].img)
                         e.target.style.display = 'none'
-                        e.target.nextSibling.style.display = 'flex'
+                        e.target.nextElementSibling.style.display = 'flex'
                       }}
                     />
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center hidden">
-                      <div className="text-4xl lg:text-6xl opacity-20">{carouselItems[current].icon}</div>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center flex" style={{ display: 'none' }}>
+                      <div className="text-4xl lg:text-6xl opacity-60 text-white">{carouselItems[current].icon}</div>
                     </div>
                   </div>
                 </div>

@@ -92,13 +92,31 @@ export default async function handler(req, res) {
         message: error.message 
       })
     }
+  } else if (event.type === 'payment_intent.succeeded') {
+    console.log(`🔥 Processing payment_intent.succeeded`)
+    try {
+      await handlePaymentIntentSucceeded(event.data.object, event.id)
+      console.log('✅ Payment intent processed successfully')
+      return res.status(200).json({ 
+        received: true, 
+        processed: true,
+        event_type: event.type,
+        event_id: event.id
+      })
+    } catch (error) {
+      console.error('❌ Error processing payment intent:', error)
+      return res.status(500).json({ 
+        error: 'Failed to process payment intent',
+        message: error.message 
+      })
+    }
   } else {
     console.log(`ℹ️ Ignoring event type: ${event.type}`)
     return res.status(200).json({ 
       received: true, 
       processed: false,
       event_type: event.type,
-      message: 'Event type not handled - only checkout.session.completed is processed'
+      message: 'Event type not handled - only checkout.session.completed and payment_intent.succeeded are processed'
     })
   }
 }
@@ -184,6 +202,73 @@ async function handleCheckoutSessionCompleted(sessionObject, eventId) {
   } catch (error) {
     console.error('❌ Error handling checkout session:', error)
     console.error('❌ Error stack:', error.stack)
+    throw error
+  }
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
+  try {
+    console.log('🔥🔥🔥 PROCESSING PAYMENT INTENT SUCCEEDED 🔥🔥🔥')
+    console.log('🔥 Event ID:', eventId)
+    console.log('🔥 Payment Intent ID:', paymentIntent.id)
+    console.log('🔥 Payment Status:', paymentIntent.status)
+    console.log('🔥 Amount:', paymentIntent.amount)
+    
+    // Extract data from payment intent
+    const customerEmail = paymentIntent.metadata?.customerEmail
+    const customerName = paymentIntent.metadata?.customerName
+    const referralCode = paymentIntent.metadata?.referralCode
+    const priceId = paymentIntent.metadata?.priceId
+    const amount = paymentIntent.amount
+
+    console.log('🔥 EXTRACTED DATA:')
+    console.log('🔥 - Customer email:', customerEmail)
+    console.log('🔥 - Customer name:', customerName)
+    console.log('🔥 - Referral code:', referralCode)
+    console.log('🔥 - Price ID:', priceId)
+    console.log('🔥 - Amount:', amount)
+
+    if (!customerEmail) {
+      console.error('❌❌❌ NO CUSTOMER EMAIL FOUND ❌❌❌')
+      throw new Error('No customer email found in payment intent metadata')
+    }
+
+    // Find user by email
+    const user = await findOrCreateUserByEmail(customerEmail, customerName)
+
+    if (!user) {
+      throw new Error('Could not find or create user')
+    }
+
+    console.log('🔥 Found/created user:', user.email)
+
+    // Update user's payment status
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        has_paid: true,
+        payment_date: new Date().toISOString(),
+        stripe_payment_intent_id: paymentIntent.id,
+        amount_paid: amount / 100, // Convert from cents
+        currency: paymentIntent.currency
+      })
+      .eq('id', user.id)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    console.log('✅ Successfully updated user payment status')
+
+    // Handle referral if provided
+    if (referralCode && referralCode.trim()) {
+      await handleReferralReward(referralCode, user.id, amount)
+    }
+
+    return { success: true }
+
+  } catch (error) {
+    console.error('❌ Error processing payment intent:', error)
     throw error
   }
 }

@@ -32,12 +32,12 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price: priceId,
+        price: priceId, // This automatically gets the correct currency from Stripe
         quantity: 1,
       }],
       mode: 'payment',
       success_url: `${req.headers.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/pricing`,
+      cancel_url: `${req.headers.origin}/checkout?priceId=${priceId}&referral=${referralCode || ''}`,
       
       // CRITICAL: Include all necessary metadata in the checkout session
       metadata: {

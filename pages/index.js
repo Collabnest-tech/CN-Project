@@ -26,6 +26,7 @@ export default function Home() {
     }
 
     checkSession()
+    fetchCourseData() // Add this line
 
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
@@ -45,7 +46,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error checking session:', error)
     } finally {
-      setLoading(false)
+      setLoading(false
+      )
     }
   }
 
@@ -94,16 +96,50 @@ export default function Home() {
   }
 
   async function fetchCourseData() {
-    // Simplified - no longer fetching from deprecated API
-    setCourseData({
-      name: "AI for Making Money Online",
-      price: { 
-        id: "price_1RjMCTGh6fpaudVTgYPuYixf", // Your actual price ID
-        amount: 15, 
-        formatted: '$15.00', 
-        currency: 'USD' 
+    try {
+      // Fetch price details from your own API to get currency
+      const response = await fetch('/api/get-price-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: 'price_1RjMCTGh6fpaudVTgYPuYixf' })
+      })
+      
+      if (response.ok) {
+        const priceData = await response.json()
+        setCourseData({
+          name: "AI for Making Money Online",
+          price: {
+            id: priceData.price.id,
+            amount: priceData.price.unit_amount / 100, // Convert from cents
+            formatted: `${priceData.price.currency.toUpperCase()} ${(priceData.price.unit_amount / 100).toFixed(2)}`,
+            currency: priceData.price.currency.toUpperCase()
+          }
+        })
+      } else {
+        // Fallback if API fails
+        setCourseData({
+          name: "AI for Making Money Online",
+          price: { 
+            id: "price_1RjMCTGh6fpaudVTgYPuYixf",
+            amount: 15, 
+            formatted: 'USD 15.00', 
+            currency: 'USD' 
+          }
+        })
       }
-    })
+    } catch (error) {
+      console.error('Error fetching course data:', error)
+      // Fallback pricing
+      setCourseData({
+        name: "AI for Making Money Online",
+        price: { 
+          id: "price_1RjMCTGh6fpaudVTgYPuYixf",
+          amount: 15, 
+          formatted: 'USD 15.00', 
+          currency: 'USD' 
+        }
+      })
+    }
   }
 
   async function handlePurchase() {
@@ -112,6 +148,9 @@ export default function Home() {
       return
     }
 
+    // Use the price ID from courseData
+    const priceId = courseData?.price?.id || "price_1RjMCTGh6fpaudVTgYPuYixf"
+    
     // Only apply discount if referral code is valid
     let validReferralCode = ''
     
@@ -119,8 +158,8 @@ export default function Home() {
       validReferralCode = referralCode.trim().toUpperCase()
     }
 
-    // Redirect to checkout page instead of direct payment
-    const checkoutUrl = `/checkout?priceId=price_1RjMCTGh6fpaudVTgYPuYixf&referral=${validReferralCode}`
+    // Redirect to checkout page with dynamic price ID
+    const checkoutUrl = `/checkout?priceId=${priceId}&referral=${validReferralCode}`
     router.push(checkoutUrl)
   }
 

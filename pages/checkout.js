@@ -9,7 +9,6 @@ export default function Checkout() {
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [courseData, setCourseData] = useState(null)
   const [session, setSession] = useState(null)
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -19,10 +18,7 @@ export default function Checkout() {
 
   useEffect(() => {
     checkSession()
-    if (priceId) {
-      fetchCourseData()
-    }
-  }, [priceId])
+  }, [])
 
   const checkSession = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -38,25 +34,6 @@ export default function Checkout() {
     }))
   }
 
-  const fetchCourseData = async () => {
-    try {
-      const response = await fetch('/api/course-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId })
-      })
-      
-      const data = await response.json()
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setCourseData(data)
-      }
-    } catch (err) {
-      setError('Failed to load course data')
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -67,6 +44,11 @@ export default function Checkout() {
 
     if (!customerInfo.name.trim()) {
       setError('Please enter your full name')
+      return
+    }
+
+    if (!priceId) {
+      setError('No price ID provided')
       return
     }
 
@@ -84,23 +66,23 @@ export default function Checkout() {
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          priceId: courseData.price.id,
+          priceId: priceId,
           referralCode: referral || ''
         }),
       })
 
-      const { sessionId, url, error: backendError } = await response.json()
+      const responseData = await response.json()
 
-      if (backendError) {
-        setError(backendError)
+      if (!response.ok || responseData.error) {
+        setError(responseData.error || 'Failed to create checkout session')
         setLoading(false)
         return
       }
 
       // Redirect to Stripe Checkout
-      if (url) {
+      if (responseData.url) {
         console.log('Redirecting to Stripe Checkout...')
-        window.location.href = url
+        window.location.href = responseData.url
       } else {
         setError('Failed to create checkout session')
         setLoading(false)
@@ -113,16 +95,13 @@ export default function Checkout() {
     }
   }
 
-  if (!courseData) {
+  if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     )
   }
-
-  const price = courseData.price.unit_amount / 100
-  const currency = courseData.price.currency.toUpperCase()
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -137,12 +116,15 @@ export default function Checkout() {
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-medium">{courseData.course.title}</h3>
-                <p className="text-gray-600">Full Course Access</p>
+                <h3 className="font-medium">Course Access</h3>
+                <p className="text-gray-600">Full Course Access & Lifetime Updates</p>
+                {priceId && (
+                  <p className="text-sm text-gray-500 mt-1">Price ID: {priceId}</p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-green-600">
-                  {currency === 'GBP' ? '£' : '$'}{price}
+                  Proceed to Payment
                 </p>
               </div>
             </div>
@@ -255,7 +237,7 @@ export default function Checkout() {
                   Processing...
                 </div>
               ) : (
-                `Pay ${currency === 'GBP' ? '£' : '$'}${price} - Proceed to Stripe`
+                'Proceed to Stripe Checkout'
               )}
             </button>
           </form>
@@ -263,6 +245,9 @@ export default function Checkout() {
           <div className="mt-6 text-center text-sm text-gray-500">
             <p>🔒 Secure payment powered by Stripe</p>
             <p>You'll be redirected to Stripe to complete your payment</p>
+            <p className="mt-2 text-xs">
+              After payment, you'll receive instant access to the course
+            </p>
           </div>
         </div>
       </div>

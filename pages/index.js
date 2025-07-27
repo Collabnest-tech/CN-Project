@@ -1,12 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { moduleData } from '../lib/moduleData'
 import { useSwipeable } from 'react-swipeable'
-import { useRouter } from 'next/router'
 
 export default function Home() {
+  const router = useRouter()
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
   const [current, setCurrent] = useState(0)
@@ -14,7 +15,6 @@ export default function Home() {
   const [courseData, setCourseData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [referralStatus, setReferralStatus] = useState(null) // valid, invalid, or null
-  const router = useRouter()
 
   useEffect(() => {
     // Auto-fill referral code from URL
@@ -25,16 +25,47 @@ export default function Home() {
       validateReferralCode(upperCaseRef)
     }
 
-    Promise.all([
-      checkUserSession(),
-      fetchCourseData()
-    ]).finally(() => setLoading(false))
+    checkSession()
 
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
     }, 5000)
     return () => clearInterval(interval)
   }, [router.query])
+
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      setSession(session)
+      
+      // If user is logged in, check if they have paid
+      if (session) {
+        await checkPaymentStatus(session.user.id)
+      }
+    } catch (error) {
+      console.error('Error checking session:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const checkPaymentStatus = async (userId) => {
+    try {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('has_paid')
+        .eq('id', userId)
+        .single()
+
+      if (!error && user?.has_paid) {
+        // User has paid, redirect to course
+        router.push('/course')
+        return
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error)
+    }
+  }
 
   async function validateReferralCode(code) {
     if (!code.trim()) {
@@ -59,23 +90,6 @@ export default function Home() {
     } catch (error) {
       console.error('Error validating referral code:', error)
       setReferralStatus('invalid')
-    }
-  }
-
-  async function checkUserSession() {
-    const { data: { session } } = await supabase.auth.getSession()
-    setSession(session)
-    
-    if (session) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('has_paid')
-        .eq('id', session.user.id)
-        .single()
-      
-      if (!error && data) {
-        setUserPaid(data.has_paid)
-      }
     }
   }
 

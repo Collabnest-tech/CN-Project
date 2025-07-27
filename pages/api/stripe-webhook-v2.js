@@ -73,8 +73,26 @@ export default async function handler(req, res) {
     })
   }
 
-  // ONLY handle payment_intent.succeeded for custom Stripe Elements
-  if (event.type === 'payment_intent.succeeded') {
+  // ONLY handle checkout.session.completed
+  if (event.type === 'checkout.session.completed') {
+    console.log(`🔥 Processing checkout.session.completed`)
+    try {
+      await handleCheckoutSessionCompleted(event.data.object, event.id)
+      console.log('✅ Checkout session processed successfully')
+      return res.status(200).json({ 
+        received: true, 
+        processed: true,
+        event_type: event.type,
+        event_id: event.id
+      })
+    } catch (error) {
+      console.error('❌ Error processing checkout session:', error)
+      return res.status(500).json({ 
+        error: 'Failed to process checkout session',
+        message: error.message 
+      })
+    }
+  } else if (event.type === 'payment_intent.succeeded') {
     console.log(`🔥 Processing payment_intent.succeeded`)
     try {
       await handlePaymentIntentSucceeded(event.data.object, event.id)
@@ -92,20 +110,13 @@ export default async function handler(req, res) {
         message: error.message 
       })
     }
-  } 
-  // Comment out checkout.session.completed since you're using custom elements
-  /*
-  else if (event.type === 'checkout.session.completed') {
-    // Not needed for custom Stripe Elements
-  }
-  */
-  else {
+  } else {
     console.log(`ℹ️ Ignoring event type: ${event.type}`)
     return res.status(200).json({ 
       received: true, 
       processed: false,
       event_type: event.type,
-      message: 'Event type not handled - only payment_intent.succeeded is processed for custom checkout'
+      message: 'Event type not handled - only checkout.session.completed and payment_intent.succeeded are processed'
     })
   }
 }
@@ -203,7 +214,7 @@ async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
     console.log('🔥 Payment Status:', paymentIntent.status)
     console.log('🔥 Amount:', paymentIntent.amount)
     
-    // Extract data from payment intent metadata
+    // Extract data from payment intent
     const customerEmail = paymentIntent.metadata?.customerEmail
     const customerName = paymentIntent.metadata?.customerName
     const referralCode = paymentIntent.metadata?.referralCode
@@ -223,18 +234,13 @@ async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
     }
 
     // Find user by email
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', customerEmail)
-      .single()
+    const user = await findOrCreateUserByEmail(customerEmail, customerName)
 
-    if (userError || !user) {
-      console.error('❌ User not found:', userError)
-      throw new Error(`User not found for email: ${customerEmail}`)
+    if (!user) {
+      throw new Error('Could not find or create user')
     }
 
-    console.log('🔥 Found user:', user.email)
+    console.log('🔥 Found/created user:', user.email)
 
     // Update user's payment status
     const { error: updateError } = await supabase
@@ -363,4 +369,66 @@ async function createTransactionRecord(paymentIntentId, userId, amount, sessionO
       })
       .select()
 
-    if
+    if (transactionError) {
+      console.error('❌ Error creating transaction:', transactionError)
+    } else {
+      console.log('✅ Transaction record created:', data)
+    }
+  } catch (error) {
+    console.error('❌ Error in createTransactionRecord:', error)
+  }
+}
+
+async function processReferralCommission(referralCode, purchaserUserId, amount) {
+  try {
+    console.log('🔥 Processing referral commission for code:', referralCode)
+
+    // Find referrer
+    const { data: referrer, error: referrerError } = await supabase
+      .from('users')
+      .select('id, referral_code, has_paid')
+      .eq('referral_code', referralCode.trim().toUpperCase())
+      .eq('has_paid', true)
+      .single()
+
+    if (referrerError || !referrer) {
+      console.error('❌ Valid referrer not found for code:', referralCode)
+      return
+    }
+
+    // Check if referral already exists
+    const { data: existingReferral } = await supabase
+      .from('referrals')
+      .select('id')
+      .eq('referrer_id', referrer.id)
+      .eq('referred_id', purchaserUserId)
+      .single()
+
+    if (existingReferral) {
+      console.log('ℹ️ Referral already exists, skipping commission')
+      return
+    }
+
+    console.log(`🔥 Found referrer ${referrer.id}, creating referral record`)
+
+    // Create referral record
+    const { error: referralError } = await supabase
+      .from('referrals')
+      .insert({
+        referrer_id: referrer.id,
+        referred_id: purchaserUserId,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        paid_at: new Date().toISOString()
+      })
+
+    if (referralError) {
+      console.error('❌ Error creating referral record:', referralError)
+    } else {
+      console.log(`✅ Referral commission processed for ${referrer.id}`)
+    }
+
+  } catch (error) {
+    console.error('❌ Error processing referral commission:', error)
+  }
+}

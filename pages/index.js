@@ -94,48 +94,34 @@ export default function Home() {
   }
 
   async function fetchCourseData() {
-    try {
-      const response = await fetch('/api/get-product-info')
-      if (response.ok) {
-        const data = await response.json()
-        setCourseData(data)
-      } else {
-        setCourseData({
-          name: "AI for Making Money Online",
-          price: { amount: 15, formatted: '$15.00', currency: 'USD' }
-        })
+    // Simplified - no longer fetching from deprecated API
+    setCourseData({
+      name: "AI for Making Money Online",
+      price: { 
+        id: "price_1RjMCTGh6fpaudVTgYPuYixf", // Your actual price ID
+        amount: 15, 
+        formatted: '$15.00', 
+        currency: 'USD' 
       }
-    } catch (error) {
-      console.error('Error fetching course data:', error)
-      setCourseData({
-        name: "AI for Making Money Online",
-        price: { amount: 15, formatted: '$15.00', currency: 'USD' }
-      })
-    }
+    })
   }
 
   async function handlePurchase() {
     if (!session) {
-      alert('Please log in to purchase the course.')
-      return
-    }
-
-    if (!courseData || !courseData.price) {
-      alert('Course pricing not available. Please try again.')
+      router.push('/auth')
       return
     }
 
     // Only apply discount if referral code is valid
-    let finalPrice = courseData.price.amount
     let validReferralCode = ''
     
     if (referralCode.trim() && referralStatus === 'valid') {
-      finalPrice = Math.max(finalPrice - 5, 5) // $5 discount, minimum $5
       validReferralCode = referralCode.trim().toUpperCase()
     }
 
-    const checkoutUrl = `/checkout?priceId=${courseData.price.id}&referral=${validReferralCode}&finalPrice=${finalPrice}`
-    window.location.href = checkoutUrl
+    // Redirect to checkout page instead of direct payment
+    const checkoutUrl = `/checkout?priceId=price_1RjMCTGh6fpaudVTgYPuYixf&referral=${validReferralCode}`
+    router.push(checkoutUrl)
   }
 
   // Handle manual referral code input

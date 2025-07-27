@@ -1,8 +1,14 @@
 import Stripe from 'stripe'
-import { supabase } from '../../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+// Use service role key for server-side operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 // Disable body parsing for webhooks
 export const config = {
@@ -145,7 +151,7 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
       return
     }
 
-    // Calculate commission ($5 flat rate)
+    // Calculate commission (£5 flat rate)
     const commission = 5.00
 
     // Create referral record
@@ -162,7 +168,7 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
     if (referralError) {
       console.error('Error creating referral record:', referralError)
     } else {
-      console.log(`Referral commission of $${commission} processed for user ${referrer.id}`)
+      console.log(`Referral commission of £${commission} processed for user ${referrer.id}`)
     }
 
   } catch (error) {

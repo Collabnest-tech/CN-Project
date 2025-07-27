@@ -95,32 +95,54 @@ export default function Home() {
     }
   }
 
+  // Update fetchCourseData to handle both prices:
   async function fetchCourseData() {
     try {
-      // Fetch price details from your own API to get currency
-      const response = await fetch('/api/get-price-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: 'price_1RjMCTGh6fpaudVTgYPuYixf' })
-      })
+      // Fetch both price options from environment variables
+      const [defaultPriceResponse, discountPriceResponse] = await Promise.all([
+        fetch('/api/get-price-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceId: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID })
+        }),
+        fetch('/api/get-price-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceId: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID })
+        })
+      ])
       
-      if (response.ok) {
-        const priceData = await response.json()
+      if (defaultPriceResponse.ok && discountPriceResponse.ok) {
+        const defaultPriceData = await defaultPriceResponse.json()
+        const discountPriceData = await discountPriceResponse.json()
+        
         setCourseData({
           name: "AI for Making Money Online",
-          price: {
-            id: priceData.price.id,
-            amount: priceData.price.unit_amount / 100, // Convert from cents
-            formatted: `${priceData.price.currency.toUpperCase()} ${(priceData.price.unit_amount / 100).toFixed(2)}`,
-            currency: priceData.price.currency.toUpperCase()
+          defaultPrice: {
+            id: defaultPriceData.price.id,
+            amount: defaultPriceData.price.unit_amount / 100,
+            formatted: `${defaultPriceData.price.currency.toUpperCase()} ${(defaultPriceData.price.unit_amount / 100).toFixed(2)}`,
+            currency: defaultPriceData.price.currency.toUpperCase()
+          },
+          discountPrice: {
+            id: discountPriceData.price.id,
+            amount: discountPriceData.price.unit_amount / 100,
+            formatted: `${discountPriceData.price.currency.toUpperCase()} ${(discountPriceData.price.unit_amount / 100).toFixed(2)}`,
+            currency: discountPriceData.price.currency.toUpperCase()
           }
         })
       } else {
-        // Fallback if API fails
+        // Fallback pricing
         setCourseData({
           name: "AI for Making Money Online",
-          price: { 
-            id: "price_1RjMCTGh6fpaudVTgYPuYixf",
+          defaultPrice: { 
+            id: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20",
+            amount: 20, 
+            formatted: 'USD 20.00', 
+            currency: 'USD' 
+          },
+          discountPrice: { 
+            id: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15",
             amount: 15, 
             formatted: 'USD 15.00', 
             currency: 'USD' 
@@ -132,8 +154,14 @@ export default function Home() {
       // Fallback pricing
       setCourseData({
         name: "AI for Making Money Online",
-        price: { 
-          id: "price_1RjMCTGh6fpaudVTgYPuYixf",
+        defaultPrice: { 
+          id: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20",
+          amount: 20, 
+          formatted: 'USD 20.00', 
+          currency: 'USD' 
+        },
+        discountPrice: { 
+          id: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15",
           amount: 15, 
           formatted: 'USD 15.00', 
           currency: 'USD' 
@@ -142,23 +170,29 @@ export default function Home() {
     }
   }
 
+  // Update handlePurchase to use the correct price based on referral code:
   async function handlePurchase() {
     if (!session) {
       router.push('/auth')
       return
     }
 
-    // Use the price ID from courseData
-    const priceId = courseData?.price?.id || "price_1RjMCTGh6fpaudVTgYPuYixf"
-    
-    // Only apply discount if referral code is valid
+    let priceId = courseData?.defaultPrice?.id // Default to $20 price
     let validReferralCode = ''
     
+    // If referral code is valid, use discount price
     if (referralCode.trim() && referralStatus === 'valid') {
       validReferralCode = referralCode.trim().toUpperCase()
+      priceId = courseData?.discountPrice?.id // Use $15 price
     }
 
-    // Redirect to checkout page with dynamic price ID
+    // Fallback price IDs if courseData not loaded
+    if (!priceId) {
+      priceId = validReferralCode 
+        ? process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15"
+        : process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20"
+    }
+
     const checkoutUrl = `/checkout?priceId=${priceId}&referral=${validReferralCode}`
     router.push(checkoutUrl)
   }
@@ -216,8 +250,9 @@ export default function Home() {
     )
   }
 
-  const originalPrice = courseData?.price?.amount || 15
-  const finalPrice = (referralCode.trim() && referralStatus === 'valid') ? Math.max(originalPrice - 5, 5) : originalPrice
+  const currentPrice = referralStatus === 'valid' ? courseData?.discountPrice : courseData?.defaultPrice
+  const finalPrice = currentPrice?.amount || (referralStatus === 'valid' ? 15 : 20)
+  const priceDisplay = currentPrice?.formatted || `USD ${finalPrice}.00`
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 sm:px-6 lg:px-8 py-6 relative">

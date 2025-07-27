@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   try {
     // Use the specific price ID from environment variables
-    const priceId = process.env.NEXT_PUBLIC_PRICE_ID
+    const priceId = process.env.STRIPE_PRICE_ID
 
     if (!priceId) {
       return res.status(500).json({ error: 'Price ID not configured in environment variables' })

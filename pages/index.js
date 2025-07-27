@@ -11,28 +11,16 @@ export default function Home() {
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
   const [current, setCurrent] = useState(0)
-  const [referralCode, setReferralCode] = useState('')
-  const [courseData, setCourseData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [referralStatus, setReferralStatus] = useState(null) // valid, invalid, or null
 
   useEffect(() => {
-    // Auto-fill referral code from URL
-    const { ref } = router.query
-    if (ref && typeof ref === 'string') {
-      const upperCaseRef = ref.toUpperCase()
-      setReferralCode(upperCaseRef)
-      validateReferralCode(upperCaseRef)
-    }
-
     checkSession()
-    fetchCourseData() // Add this line
 
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [router.query])
+  }, [])
 
   const checkSession = async () => {
     try {
@@ -46,8 +34,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error checking session:', error)
     } finally {
-      setLoading(false
-      )
+      setLoading(false)
     }
   }
 
@@ -60,7 +47,6 @@ export default function Home() {
         .single()
 
       if (!error && user?.has_paid) {
-        // User has paid, redirect to course
         setUserPaid(true)
         return
       }
@@ -69,144 +55,20 @@ export default function Home() {
     }
   }
 
-  async function validateReferralCode(code) {
-    if (!code.trim()) {
-      setReferralStatus(null)
-      return
-    }
-
-    try {
-      // Check if referral code exists and belongs to a user who has paid
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, referral_code, has_paid, full_name')
-        .eq('referral_code', code.trim().toUpperCase())
-        .eq('has_paid', true)
-        .single()
-
-      if (error || !data) {
-        setReferralStatus('invalid')
-      } else {
-        setReferralStatus('valid')
-      }
-    } catch (error) {
-      console.error('Error validating referral code:', error)
-      setReferralStatus('invalid')
-    }
-  }
-
-  // Update fetchCourseData to handle both prices:
-  async function fetchCourseData() {
-    try {
-      // Fetch both price options from environment variables
-      const [defaultPriceResponse, discountPriceResponse] = await Promise.all([
-        fetch('/api/get-price-details', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID })
-        }),
-        fetch('/api/get-price-details', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID })
-        })
-      ])
-      
-      if (defaultPriceResponse.ok && discountPriceResponse.ok) {
-        const defaultPriceData = await defaultPriceResponse.json()
-        const discountPriceData = await discountPriceResponse.json()
-        
-        setCourseData({
-          name: "AI for Making Money Online",
-          defaultPrice: {
-            id: defaultPriceData.price.id,
-            amount: defaultPriceData.price.unit_amount / 100,
-            formatted: `${defaultPriceData.price.currency.toUpperCase()} ${(defaultPriceData.price.unit_amount / 100).toFixed(2)}`,
-            currency: defaultPriceData.price.currency.toUpperCase()
-          },
-          discountPrice: {
-            id: discountPriceData.price.id,
-            amount: discountPriceData.price.unit_amount / 100,
-            formatted: `${discountPriceData.price.currency.toUpperCase()} ${(discountPriceData.price.unit_amount / 100).toFixed(2)}`,
-            currency: discountPriceData.price.currency.toUpperCase()
-          }
-        })
-      } else {
-        // Fallback pricing
-        setCourseData({
-          name: "AI for Making Money Online",
-          defaultPrice: { 
-            id: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20",
-            amount: 20, 
-            formatted: 'USD 20.00', 
-            currency: 'USD' 
-          },
-          discountPrice: { 
-            id: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15",
-            amount: 15, 
-            formatted: 'USD 15.00', 
-            currency: 'USD' 
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching course data:', error)
-      // Fallback pricing
-      setCourseData({
-        name: "AI for Making Money Online",
-        defaultPrice: { 
-          id: process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20",
-          amount: 20, 
-          formatted: 'USD 20.00', 
-          currency: 'USD' 
-        },
-        discountPrice: { 
-          id: process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15",
-          amount: 15, 
-          formatted: 'USD 15.00', 
-          currency: 'USD' 
-        }
-      })
-    }
-  }
-
-  // Update handlePurchase to use the correct price based on referral code:
+  // Simplified purchase handler - just redirect to checkout
   async function handlePurchase() {
     if (!session) {
       router.push('/auth')
       return
     }
 
-    let priceId = courseData?.defaultPrice?.id // Default to $20 price
-    let validReferralCode = ''
-    
-    // If referral code is valid, use discount price
-    if (referralCode.trim() && referralStatus === 'valid') {
-      validReferralCode = referralCode.trim().toUpperCase()
-      priceId = courseData?.discountPrice?.id // Use $15 price
-    }
+    // Get referral code from URL if present, otherwise no referral
+    const { ref } = router.query
+    const referralCode = ref ? ref.toUpperCase() : ''
 
-    // Fallback price IDs if courseData not loaded
-    if (!priceId) {
-      priceId = validReferralCode 
-        ? process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID || "price_fallback_15"
-        : process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || "price_fallback_20"
-    }
-
-    const checkoutUrl = `/checkout?priceId=${priceId}&referral=${validReferralCode}`
+    // Always use default price - let checkout page handle referral logic
+    const checkoutUrl = `/checkout?referral=${referralCode}`
     router.push(checkoutUrl)
-  }
-
-  // Handle manual referral code input
-  async function handleReferralCodeChange(value) {
-    const upperCaseValue = value.toUpperCase()
-    setReferralCode(upperCaseValue)
-    
-    // Debounce validation
-    clearTimeout(window.referralValidationTimeout)
-    window.referralValidationTimeout = setTimeout(() => {
-      validateReferralCode(upperCaseValue)
-    }, 500)
   }
 
   const carouselItems = [
@@ -250,13 +112,14 @@ export default function Home() {
     )
   }
 
-  const currentPrice = referralStatus === 'valid' ? courseData?.discountPrice : courseData?.defaultPrice
-  const finalPrice = currentPrice?.amount || (referralStatus === 'valid' ? 15 : 20)
-  const priceDisplay = currentPrice?.formatted || `USD ${finalPrice}.00`
+  // Hardcoded pricing
+  const basePrice = 25
+  const hasReferral = router.query.ref
+  const displayPrice = hasReferral ? 20 : 25
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 sm:px-6 lg:px-8 py-6 relative">
-      {/* Responsive Logo */}
+      {/* Logo */}
       <div className="flex justify-center mb-6 lg:mb-8">
         <Image
           src="/logo.jpeg"
@@ -267,47 +130,22 @@ export default function Home() {
         />
       </div>
 
-      {/* Container with responsive max-width */}
       <div className="max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl mx-auto">
         
-        {/* Referral Alert Banner */}
+        {/* Simplified Referral Alert Banner */}
         {router.query.ref && (
-          <div className={`mb-6 p-4 rounded-xl border-l-4 ${
-            referralStatus === 'valid' 
-              ? 'bg-green-900 border-green-400' 
-              : referralStatus === 'invalid' 
-                ? 'bg-red-900 border-red-400' 
-                : 'bg-yellow-900 border-yellow-400'
-          }`}>
+          <div className="mb-6 p-4 rounded-xl border-l-4 bg-green-900 border-green-400">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">
-                {referralStatus === 'valid' ? '🎉' : referralStatus === 'invalid' ? '❌' : '⏳'}
-              </span>
+              <span className="text-2xl">🎉</span>
               <div>
-                {referralStatus === 'valid' && (
-                  <>
-                    <h3 className="text-green-200 font-bold">Great news! You have a $5 discount!</h3>
-                    <p className="text-green-300 text-sm">Your referral code "{referralCode}" is valid</p>
-                  </>
-                )}
-                {referralStatus === 'invalid' && (
-                  <>
-                    <h3 className="text-red-200 font-bold">Invalid referral code</h3>
-                    <p className="text-red-300 text-sm">Code "{referralCode}" is not valid or expired</p>
-                  </>
-                )}
-                {referralStatus === null && (
-                  <>
-                    <h3 className="text-yellow-200 font-bold">Checking referral code...</h3>
-                    <p className="text-yellow-300 text-sm">Please wait while we validate "{referralCode}"</p>
-                  </>
-                )}
+                <h3 className="text-green-200 font-bold">Great news! You have a $5 discount!</h3>
+                <p className="text-green-300 text-sm">Referral code "{router.query.ref.toUpperCase()}" applied</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Alert Section - Responsive Grid */}
+        {/* Alert Section */}
         <div className="text-center mb-8 lg:mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             <div className="bg-gradient-to-r from-amber-900 to-red-900 rounded-xl p-6 lg:p-8 border-l-4 border-yellow-400">
@@ -332,9 +170,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Hero Section - Responsive Layout */}
+        {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-8 lg:mb-12">
-          {/* Left Column - Text Content */}
+          {/* Left Column */}
           <div className="text-center lg:text-left">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-4 lg:mb-6 text-white leading-tight">
               While Most People Wonder<br />
@@ -366,52 +204,30 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column - Pricing & CTA */}
+          {/* Right Column - Simplified Pricing */}
           <div className="lg:ml-8">
             <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-8 mb-6">
               <div className="text-center">
                 <p className="text-green-200 mb-3 text-sm lg:text-base">Investment in Your Future:</p>
                 <div className="text-3xl lg:text-4xl font-bold text-white mb-3">
-                  {referralCode.trim() && referralStatus === 'valid' && originalPrice > finalPrice && (
-                    <span className="line-through text-gray-400 text-lg lg:text-xl">${originalPrice}</span>
+                  {hasReferral && (
+                    <span className="line-through text-gray-400 text-lg lg:text-xl">${basePrice}</span>
                   )}
-                  <span className={`ml-2 ${referralCode.trim() && referralStatus === 'valid' && originalPrice > finalPrice ? 'text-green-400' : 'text-white'}`}>
-                    ${finalPrice}
+                  <span className={`ml-2 ${hasReferral ? 'text-green-400' : 'text-white'}`}>
+                    ${displayPrice}
                   </span>
                 </div>
                 <p className="text-green-200 mb-4 text-sm lg:text-base">
-                  {courseData?.price ? 'Secure pricing from Stripe' : 'Loading pricing...'}
+                  One-time payment • Lifetime access
                 </p>
                 
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Referral code for $5 off"
-                    value={referralCode}
-                    onChange={(e) => handleReferralCodeChange(e.target.value)}
-                    className={`bg-gray-700 text-white px-3 py-2 rounded-lg w-full text-sm lg:text-base border-2 ${
-                      referralStatus === 'valid' ? 'border-green-400' : 
-                      referralStatus === 'invalid' ? 'border-red-400' : 
-                      'border-gray-600'
-                    }`}
-                  />
-                  <div className="text-xs lg:text-sm mt-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-blue-300">
-                        Total: ${finalPrice} {courseData?.price?.currency || 'USD'}
-                      </span>
-                      {referralCode.trim() && referralStatus === 'valid' && originalPrice > finalPrice && (
-                        <span className="text-green-400 font-bold">(Save $5!)</span>
-                      )}
-                    </div>
-                    {referralStatus === 'invalid' && (
-                      <p className="text-red-400 text-xs mt-1">Invalid or expired referral code</p>
-                    )}
-                    {referralStatus === 'valid' && (
-                      <p className="text-green-400 text-xs mt-1">✓ Valid referral code applied</p>
-                    )}
+                {hasReferral && (
+                  <div className="mb-4 p-3 bg-green-800 rounded-lg">
+                    <p className="text-green-200 text-sm">
+                      🎉 $5 discount applied with referral code!
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             
@@ -427,14 +243,9 @@ export default function Home() {
                 <>
                   <button
                     onClick={handlePurchase}
-                    disabled={!courseData}
-                    className={`w-full px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all ${
-                      courseData 
-                        ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
-                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    }`}
+                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all"
                   >
-                    {courseData ? `Secure Your Spot - $${finalPrice}` : 'Loading...'}
+                    Get Access Now - ${displayPrice}
                   </button>
                   <Link href="/courses">
                     <a className="block border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all text-center">
@@ -447,7 +258,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Carousel - Responsive */}
+        {/* Carousel */}
         <div className="mb-8 lg:mb-12">
           <div {...handlers} className="relative">
             <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl shadow-2xl p-6 lg:p-8">
@@ -499,7 +310,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Module Showcase - Responsive Grid */}
+        {/* Module Showcase */}
         <div className="mb-8 lg:mb-12">
           <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-center text-white mb-3 lg:mb-4">
             What Successful Students Are Learning
@@ -563,7 +374,7 @@ export default function Home() {
               onClick={handlePurchase}
               className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all"
             >
-              Begin Your Transformation - ${finalPrice}
+              Begin Your Transformation - ${displayPrice}
             </button>
             <p className="text-green-300 text-xs lg:text-sm mt-3 lg:mt-4">
               ✓ Lifetime Access ✓ Start Immediately ✓ Expert Support ✓ Real Results
@@ -585,12 +396,12 @@ export default function Home() {
                 <div className="text-left">
                   <p className="text-white font-semibold text-sm lg:text-base">WhatsApp Support</p>
                   <a 
-                    href="https://wa.me/447737007508" 
+                    href="https://wa.me/447547131573" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-green-400 hover:text-green-300 font-bold text-lg transition-colors"
                   >
-                    +44 7737 007508
+                    +44 7547 131573
                   </a>
                 </div>
               </div>

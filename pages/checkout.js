@@ -237,17 +237,55 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
 
 export default function Checkout() {
   const router = useRouter()
-  const { priceId, referral } = router.query
+  const { referral } = router.query
   const [courseDetails, setCourseDetails] = useState(null)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [referralValid, setReferralValid] = useState(null)
+  const [selectedPriceId, setSelectedPriceId] = useState(null)
 
   useEffect(() => {
-    if (priceId) {
-      fetchCourseDetails()
-    }
-  }, [priceId])
+    validateReferralAndSetPrice()
+  }, [referral])
 
-  const fetchCourseDetails = async () => {
+  const validateReferralAndSetPrice = async () => {
+    let isValidReferral = false
+    
+    // Validate referral code if provided
+    if (referral && referral.trim()) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, referral_code, has_paid, full_name')
+          .eq('referral_code', referral.trim().toUpperCase())
+          .eq('has_paid', true)
+          .single()
+
+        if (!error && data) {
+          isValidReferral = true
+          setReferralValid(true)
+        } else {
+          setReferralValid(false)
+        }
+      } catch (error) {
+        console.error('Error validating referral code:', error)
+        setReferralValid(false)
+      }
+    }
+
+    // Set price ID based on referral validity
+    const priceId = isValidReferral 
+      ? process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID 
+      : process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID
+
+    setSelectedPriceId(priceId)
+    
+    // Fetch course details with the selected price
+    if (priceId) {
+      fetchCourseDetails(priceId)
+    }
+  }
+
+  const fetchCourseDetails = async (priceId) => {
     try {
       const response = await fetch('/api/get-price-details', {
         method: 'POST',
@@ -261,6 +299,16 @@ export default function Checkout() {
       }
     } catch (error) {
       console.error('Error fetching course details:', error)
+      // Fallback pricing
+      setCourseDetails({
+        id: priceId,
+        unit_amount: isValidReferral ? 2000 : 2500, // $20 or $25
+        currency: 'usd',
+        product: {
+          name: 'AI for Making Money Online',
+          description: 'Full Course Access & Lifetime Updates'
+        }
+      })
     }
   }
 
@@ -320,10 +368,10 @@ export default function Checkout() {
                     {courseDetails?.product?.name || "AI for Making Money Online"}
                   </h3>
                   <p className="text-gray-600">
-                    Full Course Access & Lifetime Updates
+                    {courseDetails?.product?.description || "Full Course Access & Lifetime Updates"}
                   </p>
-                  {priceId && (
-                    <p className="text-sm text-gray-500 mt-1">Price ID: {priceId}</p>
+                  {selectedPriceId && (
+                    <p className="text-sm text-gray-500 mt-1">Price ID: {selectedPriceId}</p>
                   )}
                 </div>
                 <div className="text-right">
@@ -337,9 +385,16 @@ export default function Checkout() {
               </div>
               
               {referral && (
-                <div className="mt-4 p-3 bg-green-100 rounded-lg">
-                  <p className="text-green-800 text-sm">
-                    🎉 Referral code applied: <strong>{referral}</strong>
+                <div className={`mt-4 p-3 rounded-lg ${
+                  referralValid 
+                    ? 'bg-green-100 border border-green-400' 
+                    : 'bg-red-100 border border-red-400'
+                }`}>
+                  <p className={`text-sm ${referralValid ? 'text-green-800' : 'text-red-800'}`}>
+                    {referralValid 
+                      ? `🎉 Referral code applied: ${referral.toUpperCase()} - You saved $5!`
+                      : `❌ Invalid referral code: ${referral.toUpperCase()}`
+                    }
                   </p>
                 </div>
               )}
@@ -348,8 +403,8 @@ export default function Checkout() {
             {/* Stripe Elements Wrapper */}
             <Elements stripe={stripePromise}>
               <CheckoutForm 
-                priceId={priceId}
-                referral={referral}
+                priceId={selectedPriceId}
+                referral={referralValid ? referral : ''}
                 courseDetails={courseDetails}
                 onSuccess={handlePaymentSuccess}
               />

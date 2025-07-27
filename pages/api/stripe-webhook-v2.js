@@ -32,23 +32,26 @@ function generateReferralCode() {
 }
 
 export default async function handler(req, res) {
-  console.log('🔥 WEBHOOK CALLED - Method:', req.method)
+  console.log('🔥 WEBHOOK V2 CALLED - Method:', req.method)
+  console.log('🔥 Headers:', req.headers)
   
+  // Immediately respond to any non-POST request
   if (req.method !== 'POST') {
     console.error('❌ Invalid method:', req.method)
-    return res.status(405).end('Method not allowed')
+    res.setHeader('Allow', 'POST')
+    return res.status(405).json({ error: 'Method Not Allowed', allowed: ['POST'] })
   }
 
   const sig = req.headers['stripe-signature']
   
   if (!sig) {
     console.error('❌ No Stripe signature found')
-    return res.status(400).end('No Stripe signature')
+    return res.status(400).json({ error: 'Missing stripe-signature header' })
   }
 
   if (!webhookSecret) {
     console.error('❌ No webhook secret configured')
-    return res.status(500).end('Webhook secret not configured')
+    return res.status(500).json({ error: 'Webhook secret not configured' })
   }
   
   let event
@@ -57,26 +60,52 @@ export default async function handler(req, res) {
     const buf = await buffer(req)
     console.log('🔥 Buffer length:', buf.length)
     
+    if (buf.length === 0) {
+      console.error('❌ Empty request body')
+      return res.status(400).json({ error: 'Empty request body' })
+    }
+    
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
     console.log('🔥 Event constructed successfully:', event.type)
   } catch (err) {
     console.error('❌ Webhook signature verification failed:', err.message)
-    return res.status(400).end(`Webhook Error: ${err.message}`)
+    return res.status(400).json({ 
+      error: 'Webhook signature verification failed',
+      message: err.message 
+    })
   }
 
   console.log('🔥 Webhook event received:', event.type)
+  console.log('🔥 Event ID:', event.id)
 
   // ONLY handle payment_intent.succeeded
   if (event.type === 'payment_intent.succeeded') {
     console.log('🔥 Processing payment_intent.succeeded')
-    await handlePaymentSuccess(event.data.object)
-    console.log('✅ Payment success handled')
+    try {
+      await handlePaymentSuccess(event.data.object)
+      console.log('✅ Payment success handled')
+      return res.status(200).json({ 
+        received: true, 
+        processed: true,
+        event_type: event.type,
+        event_id: event.id
+      })
+    } catch (error) {
+      console.error('❌ Error processing payment:', error)
+      return res.status(500).json({ 
+        error: 'Failed to process payment',
+        message: error.message 
+      })
+    }
   } else {
     console.log(`ℹ️ Ignoring event type: ${event.type}`)
+    return res.status(200).json({ 
+      received: true, 
+      processed: false,
+      event_type: event.type,
+      message: 'Event type not handled'
+    })
   }
-
-  // Return success response
-  res.status(200).json({ received: true, processed: event.type === 'payment_intent.succeeded' })
 }
 
 async function handlePaymentSuccess(paymentIntent) {
@@ -89,7 +118,7 @@ async function handlePaymentSuccess(paymentIntent) {
 
     if (!userId) {
       console.error('❌ No userId found in payment intent metadata')
-      return
+      throw new Error('No userId in metadata')
     }
 
     console.log('🔥 Processing payment success for user:', userId)
@@ -97,6 +126,20 @@ async function handlePaymentSuccess(paymentIntent) {
     // Generate referral code for this user
     const userReferralCode = generateReferralCode()
     console.log('🔥 Generated referral code:', userReferralCode)
+
+    // First, check if user exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id, email, has_paid')
+      .eq('id', userId)
+      .single()
+
+    if (checkError || !existingUser) {
+      console.error('❌ User not found:', checkError)
+      throw new Error(`User ${userId} not found in database`)
+    }
+
+    console.log('✅ User found:', existingUser)
 
     // Update user payment status
     console.log('🔥 Attempting to update user in database...')
@@ -113,7 +156,7 @@ async function handlePaymentSuccess(paymentIntent) {
 
     if (userError) {
       console.error('❌ Error updating user payment status:', userError)
-      console.error('❌ Full error details:', JSON.stringify(userError, null, 2))
+      throw new Error(`Failed to update user: ${userError.message}`)
     } else {
       console.log('✅ Successfully updated user payment status')
       console.log('✅ Update result:', updateResult)
@@ -129,7 +172,7 @@ async function handlePaymentSuccess(paymentIntent) {
 
   } catch (error) {
     console.error('❌ Error handling payment success:', error)
-    console.error('❌ Error stack:', error.stack)
+    throw error // Re-throw so the main handler can respond with error
   }
 }
 
@@ -150,26 +193,23 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
     }
 
     const commission = 5.00
+    console.log(`🔥 Found referrer ${referrer.id}, awarding £${commission} commission`)
 
-    // Try to create referral record (skip if table doesn't exist)
-    try {
-      const { error: referralError } = await supabase
-        .from('referrals')
-        .insert({
-          referrer_id: referrer.id,
-          referred_user_id: purchaserUserId,
-          commission_earned: commission,
-          purchase_amount: amount,
-          created_at: new Date().toISOString()
-        })
+    // Try to create referral record
+    const { error: referralError } = await supabase
+      .from('referrals')
+      .insert({
+        referrer_id: referrer.id,
+        referred_user_id: purchaserUserId,
+        commission_earned: commission,
+        purchase_amount: amount,
+        created_at: new Date().toISOString()
+      })
 
-      if (referralError) {
-        console.error('❌ Error creating referral record:', referralError)
-      } else {
-        console.log(`✅ Referral commission of £${commission} processed for user ${referrer.id}`)
-      }
-    } catch (refError) {
-      console.log('ℹ️ Referrals table might not exist, skipping referral commission')
+    if (referralError) {
+      console.error('❌ Error creating referral record:', referralError)
+    } else {
+      console.log(`✅ Referral commission of £${commission} processed for user ${referrer.id}`)
     }
 
   } catch (error) {

@@ -4,12 +4,14 @@ import { supabase } from '../../lib/supabase'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
+// Disable body parsing for webhooks
 export const config = {
   api: {
     bodyParser: false,
   },
 }
 
+// Helper function to read the raw body
 async function buffer(readable) {
   const chunks = []
   for await (const chunk of readable) {
@@ -18,6 +20,7 @@ async function buffer(readable) {
   return Buffer.concat(chunks)
 }
 
+// Generate random referral code
 function generateReferralCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
@@ -38,12 +41,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Webhook signature verification failed' })
   }
 
+  console.log('Webhook event received:', event.type)
+
   switch (event.type) {
     case 'payment_intent.succeeded':
       await handlePaymentSuccess(event.data.object)
       break
     case 'payment_intent.payment_failed':
       await handlePaymentFailure(event.data.object)
+      break
+    case 'checkout.session.completed':
+      await handleCheckoutSessionCompleted(event.data.object)
       break
     default:
       console.log(`Unhandled event type ${event.type}`)
@@ -58,15 +66,15 @@ async function handlePaymentSuccess(paymentIntent) {
 
     console.log('Processing payment success for user:', userId)
 
-    // Generate referral code for this user (first purchase)
+    // Generate referral code for this user (now that they've paid)
     const userReferralCode = generateReferralCode()
 
-    // Update user payment status AND generate their referral code
+    // Update user payment status and generate their referral code
     const { error: userError } = await supabase
       .from('users')
       .update({ 
         has_paid: true,
-        referral_code: userReferralCode, // NOW they get a referral code
+        referral_code: userReferralCode,
         payment_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -75,7 +83,7 @@ async function handlePaymentSuccess(paymentIntent) {
     if (userError) {
       console.error('Error updating user payment status:', userError)
     } else {
-      console.log('Successfully updated user payment status and generated referral code for:', userId)
+      console.log('Successfully updated user payment status and generated referral code:', userReferralCode)
     }
 
     // Update transaction status
@@ -91,7 +99,7 @@ async function handlePaymentSuccess(paymentIntent) {
       console.error('Error updating transaction:', transactionError)
     }
 
-    // Handle referral commission if referral code was used
+    // Process referral commission if referral code was used
     if (referralCode && referralCode.trim()) {
       await processReferralCommission(referralCode, userId, paymentIntent.amount / 100)
     }
@@ -100,6 +108,23 @@ async function handlePaymentSuccess(paymentIntent) {
 
   } catch (error) {
     console.error('Error handling payment success:', error)
+  }
+}
+
+async function handleCheckoutSessionCompleted(session) {
+  try {
+    // Handle checkout session completion (if using checkout sessions)
+    const { userId, referralCode } = session.metadata || {}
+    
+    if (userId) {
+      await handlePaymentSuccess({
+        metadata: { userId, referralCode },
+        amount: session.amount_total,
+        id: session.payment_intent
+      })
+    }
+  } catch (error) {
+    console.error('Error handling checkout session completion:', error)
   }
 }
 
@@ -112,7 +137,7 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
       .from('users')
       .select('id, referral_code, has_paid')
       .eq('referral_code', referralCode)
-      .eq('has_paid', true) // Only users who have paid can have valid referral codes
+      .eq('has_paid', true)
       .single()
 
     if (referrerError || !referrer) {

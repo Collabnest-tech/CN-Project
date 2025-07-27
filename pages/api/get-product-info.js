@@ -8,49 +8,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get the product by looking up your specific product
-    // You'll need to create a product in Stripe dashboard first
-    const products = await stripe.products.list({
-      limit: 10,
-      active: true
-    })
+    // Use the specific price ID from environment variables
+    const priceId = process.env.NEXT_PUBLIC_PRICE_ID
 
-    // Find your AI course product (you can also use a specific product ID)
-    const courseProduct = products.data.find(
-      product => product.name.includes('AI for Making Money Online') || 
-                 product.metadata.course_type === 'ai_course'
-    )
-
-    if (!courseProduct) {
-      return res.status(404).json({ error: 'Course product not found' })
+    if (!priceId) {
+      return res.status(500).json({ error: 'Price ID not configured in environment variables' })
     }
 
-    // Get the prices for this product
-    const prices = await stripe.prices.list({
-      product: courseProduct.id,
-      active: true
+    // Fetch the specific price directly
+    const price = await stripe.prices.retrieve(priceId, {
+      expand: ['product'] // This expands the product data within the price object
     })
 
-    if (prices.data.length === 0) {
-      return res.status(404).json({ error: 'No prices found for this product' })
+    if (!price.active) {
+      return res.status(404).json({ error: 'Price is not active' })
     }
 
-    // Get the default price (you can have multiple prices for different currencies)
-    const defaultPrice = prices.data.find(price => price.currency === 'usd') || prices.data[0]
+    // Handle GBP currency formatting
+    const currencySymbol = price.currency === 'gbp' ? '£' : '$'
+    const currencyCode = price.currency.toUpperCase()
 
+    // Construct the response with complete product and price information
     const productInfo = {
-      id: courseProduct.id,
-      name: courseProduct.name,
-      description: courseProduct.description,
+      id: price.product.id,
+      name: price.product.name,
+      description: price.product.description,
       price: {
-        id: defaultPrice.id,
-        amount: defaultPrice.unit_amount / 100, // Convert from cents
-        currency: defaultPrice.currency.toUpperCase(),
-        formatted: `$${(defaultPrice.unit_amount / 100).toFixed(2)}`
+        id: price.id,
+        amount: price.unit_amount / 100, // Convert from pence/cents to pounds/dollars
+        currency: currencyCode,
+        formatted: `${currencySymbol}${(price.unit_amount / 100).toFixed(2)}`,
+        unit_amount: price.unit_amount, // Keep the pence/cent value for calculations
+        currency_symbol: currencySymbol
       },
-      metadata: courseProduct.metadata
+      metadata: price.product.metadata || {}
     }
 
+    console.log('Product info fetched successfully:', productInfo)
     res.status(200).json(productInfo)
 
   } catch (error) {

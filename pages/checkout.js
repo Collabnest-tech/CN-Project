@@ -115,7 +115,7 @@ function CheckoutForm() {
         }),
       })
 
-      const { client_secret, error: backendError, amount } = await response.json()
+      const { client_secret, error: backendError, amount, currency_symbol } = await response.json()
 
       if (backendError) {
         setError(backendError)
@@ -186,7 +186,7 @@ function CheckoutForm() {
       'India': 'IN',
       'China': 'CN'
     }
-    return countryCodes[countryName] || 'US'
+    return countryCodes[countryName] || 'GB' // Default to GB for UK-based business
   }
 
   const cardElementOptions = {
@@ -206,7 +206,19 @@ function CheckoutForm() {
     hidePostalCode: true
   }
 
-  const displayPrice = finalPrice || courseData?.price?.amount || 'Loading...'
+  // Handle display price with proper currency symbol
+  const getDisplayPrice = () => {
+    if (finalPrice) {
+      const symbol = courseData?.price?.currency_symbol || '£'
+      return `${symbol}${finalPrice}`
+    }
+    if (courseData?.price?.formatted) {
+      return courseData.price.formatted
+    }
+    return 'Loading...'
+  }
+
+  const displayPrice = getDisplayPrice()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
@@ -229,7 +241,7 @@ function CheckoutForm() {
           <h2 className="text-lg font-bold text-white mb-4">Order Summary</h2>
           <div className="flex justify-between items-center mb-2">
             <span className="text-blue-200">{courseData?.name || 'AI for Making Money Online'}</span>
-            <span className="text-white font-bold">${displayPrice}</span>
+            <span className="text-white font-bold">{displayPrice}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-blue-200">8 Complete Modules</span>
@@ -246,7 +258,7 @@ function CheckoutForm() {
           <div className="border-t border-gray-600 pt-2 mt-4">
             <div className="flex justify-between items-center text-lg font-bold">
               <span className="text-white">Total</span>
-              <span className="text-green-400">${displayPrice}</span>
+              <span className="text-green-400">{displayPrice}</span>
             </div>
           </div>
         </div>
@@ -318,7 +330,7 @@ function CheckoutForm() {
                     onChange={(e) => setCustomerInfo({...customerInfo, city: e.target.value})}
                     className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
                     required
-                    placeholder="New York"
+                    placeholder="London"
                   />
                 </div>
                 <div>
@@ -328,7 +340,7 @@ function CheckoutForm() {
                     value={customerInfo.postalCode}
                     onChange={(e) => setCustomerInfo({...customerInfo, postalCode: e.target.value})}
                     className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
-                    placeholder="10001"
+                    placeholder="SW1A 1AA"
                   />
                 </div>
               </div>
@@ -369,7 +381,7 @@ function CheckoutForm() {
                 : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
             }`}
           >
-            {loading ? 'Processing Payment...' : `Complete Purchase - $${displayPrice}`}
+            {loading ? 'Processing Payment...' : `Complete Purchase - ${displayPrice}`}
           </button>
 
           <div className="text-center text-xs text-gray-400">

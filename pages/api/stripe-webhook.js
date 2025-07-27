@@ -32,36 +32,23 @@ function generateReferralCode() {
 }
 
 export default async function handler(req, res) {
-  // Set CORS headers for Stripe
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST')
-  res.setHeader('Access-Control-Allow-Headers', 'stripe-signature, content-type')
-
   console.log('🔥 WEBHOOK CALLED - Method:', req.method)
-  console.log('🔥 URL:', req.url)
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
-  }
   
   if (req.method !== 'POST') {
     console.error('❌ Invalid method:', req.method)
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(405).end('Method not allowed')
   }
 
   const sig = req.headers['stripe-signature']
-  console.log('🔥 Stripe signature present:', !!sig)
   
   if (!sig) {
     console.error('❌ No Stripe signature found')
-    return res.status(400).json({ error: 'No Stripe signature' })
+    return res.status(400).end('No Stripe signature')
   }
 
   if (!webhookSecret) {
     console.error('❌ No webhook secret configured')
-    return res.status(500).json({ error: 'Webhook secret not configured' })
+    return res.status(500).end('Webhook secret not configured')
   }
   
   let event
@@ -70,50 +57,32 @@ export default async function handler(req, res) {
     const buf = await buffer(req)
     console.log('🔥 Buffer length:', buf.length)
     
-    if (buf.length === 0) {
-      console.error('❌ Empty request body')
-      return res.status(400).json({ error: 'Empty request body' })
-    }
-    
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
     console.log('🔥 Event constructed successfully:', event.type)
   } catch (err) {
     console.error('❌ Webhook signature verification failed:', err.message)
-    return res.status(400).json({ error: 'Webhook signature verification failed: ' + err.message })
+    return res.status(400).end(`Webhook Error: ${err.message}`)
   }
 
   console.log('🔥 Webhook event received:', event.type)
 
-  try {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        console.log('🔥 Processing payment_intent.succeeded')
-        await handlePaymentSuccess(event.data.object)
-        break
-      case 'payment_intent.payment_failed':
-        console.log('🔥 Processing payment_intent.payment_failed')
-        await handlePaymentFailure(event.data.object)
-        break
-      case 'checkout.session.completed':
-        console.log('🔥 Processing checkout.session.completed')
-        await handleCheckoutSessionCompleted(event.data.object)
-        break
-      default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`)
-    }
-
-    console.log('✅ Webhook processed successfully')
-    res.status(200).json({ received: true, event_type: event.type })
-    
-  } catch (error) {
-    console.error('❌ Error processing webhook:', error)
-    res.status(500).json({ error: 'Internal server error' })
+  // ONLY handle payment_intent.succeeded
+  if (event.type === 'payment_intent.succeeded') {
+    console.log('🔥 Processing payment_intent.succeeded')
+    await handlePaymentSuccess(event.data.object)
+    console.log('✅ Payment success handled')
+  } else {
+    console.log(`ℹ️ Ignoring event type: ${event.type}`)
   }
+
+  // Return success response
+  res.status(200).json({ received: true, processed: event.type === 'payment_intent.succeeded' })
 }
 
 async function handlePaymentSuccess(paymentIntent) {
   try {
     console.log('🔥 handlePaymentSuccess called')
+    console.log('🔥 Payment Intent ID:', paymentIntent.id)
     console.log('🔥 Payment Intent metadata:', JSON.stringify(paymentIntent.metadata, null, 2))
     
     const { userId, referralCode } = paymentIntent.metadata
@@ -128,20 +97,6 @@ async function handlePaymentSuccess(paymentIntent) {
     // Generate referral code for this user
     const userReferralCode = generateReferralCode()
     console.log('🔥 Generated referral code:', userReferralCode)
-
-    // Check if user exists first
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
-
-    if (checkError) {
-      console.error('❌ User not found in database:', checkError)
-      return
-    }
-
-    console.log('✅ User found in database:', existingUser)
 
     // Update user payment status
     console.log('🔥 Attempting to update user in database...')
@@ -158,24 +113,10 @@ async function handlePaymentSuccess(paymentIntent) {
 
     if (userError) {
       console.error('❌ Error updating user payment status:', userError)
+      console.error('❌ Full error details:', JSON.stringify(userError, null, 2))
     } else {
       console.log('✅ Successfully updated user payment status')
       console.log('✅ Update result:', updateResult)
-    }
-
-    // Update transaction status
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .update({ 
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('stripe_payment_intent_id', paymentIntent.id)
-
-    if (transactionError) {
-      console.error('❌ Error updating transaction:', transactionError)
-    } else {
-      console.log('✅ Transaction updated successfully')
     }
 
     // Process referral commission if referral code was used
@@ -188,6 +129,7 @@ async function handlePaymentSuccess(paymentIntent) {
 
   } catch (error) {
     console.error('❌ Error handling payment success:', error)
+    console.error('❌ Error stack:', error.stack)
   }
 }
 
@@ -209,62 +151,28 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
 
     const commission = 5.00
 
-    const { error: referralError } = await supabase
-      .from('referrals')
-      .insert({
-        referrer_id: referrer.id,
-        referred_user_id: purchaserUserId,
-        commission_earned: commission,
-        purchase_amount: amount,
-        created_at: new Date().toISOString()
-      })
+    // Try to create referral record (skip if table doesn't exist)
+    try {
+      const { error: referralError } = await supabase
+        .from('referrals')
+        .insert({
+          referrer_id: referrer.id,
+          referred_user_id: purchaserUserId,
+          commission_earned: commission,
+          purchase_amount: amount,
+          created_at: new Date().toISOString()
+        })
 
-    if (referralError) {
-      console.error('❌ Error creating referral record:', referralError)
-    } else {
-      console.log(`✅ Referral commission of £${commission} processed for user ${referrer.id}`)
+      if (referralError) {
+        console.error('❌ Error creating referral record:', referralError)
+      } else {
+        console.log(`✅ Referral commission of £${commission} processed for user ${referrer.id}`)
+      }
+    } catch (refError) {
+      console.log('ℹ️ Referrals table might not exist, skipping referral commission')
     }
 
   } catch (error) {
     console.error('❌ Error processing referral commission:', error)
-  }
-}
-
-async function handlePaymentFailure(paymentIntent) {
-  try {
-    console.log('🔥 Processing payment failure for:', paymentIntent.id)
-
-    const { error } = await supabase
-      .from('transactions')
-      .update({ 
-        status: 'failed',
-        failed_at: new Date().toISOString()
-      })
-      .eq('stripe_payment_intent_id', paymentIntent.id)
-
-    if (error) {
-      console.error('❌ Error updating failed transaction:', error)
-    } else {
-      console.log('✅ Failed transaction updated successfully')
-    }
-
-  } catch (error) {
-    console.error('❌ Error handling payment failure:', error)
-  }
-}
-
-async function handleCheckoutSessionCompleted(session) {
-  try {
-    const { userId, referralCode } = session.metadata || {}
-    
-    if (userId) {
-      await handlePaymentSuccess({
-        metadata: { userId, referralCode },
-        amount: session.amount_total,
-        id: session.payment_intent
-      })
-    }
-  } catch (error) {
-    console.error('❌ Error handling checkout session completion:', error)
   }
 }

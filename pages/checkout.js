@@ -1,248 +1,472 @@
 // pages/checkout.js
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
 import { loadStripe } from '@stripe/stripe-js'
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { supabase } from '../lib/supabase'
-import Link from 'next/link'
+import { useRouter } from 'next/router'
+import Image from 'next/image'
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-)
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+
+const countries = [
+  'United States',
+  'Canada', 
+  'United Kingdom',
+  'Australia',
+  'Germany',
+  'France',
+  'Spain',
+  'Italy',
+  'Netherlands',
+  'Belgium',
+  'Sweden',
+  'Norway',
+  'Denmark',
+  'Finland',
+  'Austria',
+  'Switzerland',
+  'Ireland',
+  'Portugal',
+  'Poland',
+  'Czech Republic',
+  'Hungary',
+  'Slovenia',
+  'Slovakia',
+  'Estonia',
+  'Latvia',
+  'Lithuania',
+  'Luxembourg',
+  'Malta',
+  'Cyprus',
+  'Greece',
+  'Bulgaria',
+  'Romania',
+  'Croatia',
+  'Japan',
+  'Singapore',
+  'Hong Kong',
+  'New Zealand',
+  'South Korea',
+  'Taiwan',
+  'Israel',
+  'United Arab Emirates',
+  'Saudi Arabia',
+  'Kuwait',
+  'Qatar',
+  'Bahrain',
+  'Oman',
+  'Jordan',
+  'Lebanon',
+  'Egypt',
+  'South Africa',
+  'Kenya',
+  'Nigeria',
+  'Ghana',
+  'Morocco',
+  'Tunisia',
+  'Algeria',
+  'Brazil',
+  'Mexico',
+  'Argentina',
+  'Chile',
+  'Colombia',
+  'Peru',
+  'Uruguay',
+  'Paraguay',
+  'Bolivia',
+  'Ecuador',
+  'Venezuela',
+  'Costa Rica',
+  'Panama',
+  'Guatemala',
+  'Honduras',
+  'El Salvador',
+  'Nicaragua',
+  'Dominican Republic',
+  'Jamaica',
+  'Trinidad and Tobago',
+  'Barbados',
+  'Bahamas',
+  'India',
+  'Malaysia',
+  'Thailand',
+  'Philippines',
+  'Indonesia',
+  'Vietnam',
+  'Cambodia',
+  'Laos',
+  'Myanmar',
+  'Bangladesh',
+  'Sri Lanka',
+  'Nepal',
+  'Bhutan',
+  'Maldives',
+  'Pakistan',
+  'Afghanistan',
+  'Kazakhstan',
+  'Uzbekistan',
+  'Kyrgyzstan',
+  'Tajikistan',
+  'Turkmenistan',
+  'Mongolia',
+  'China',
+  'Russia',
+  'Ukraine',
+  'Belarus',
+  'Moldova',
+  'Georgia',
+  'Armenia',
+  'Azerbaijan',
+  'Turkey',
+  'Cyprus',
+  'Albania',
+  'Bosnia and Herzegovina',
+  'Montenegro',
+  'Serbia',
+  'North Macedonia',
+  'Kosovo'
+].sort()
 
 function CheckoutForm() {
   const stripe = useStripe()
   const elements = useElements()
-  const [message, setMessage] = useState(null)
+  const router = useRouter()
+  const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [customerInfo, setCustomerInfo] = useState({
+    email: '',
+    fullName: '',
+    country: '',
+    address: '',
+    city: '',
+    postalCode: ''
+  })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!stripe || !elements) return
+  const { price = '15', referral = '' } = router.query
+  const finalPrice = parseFloat(price)
+
+  useEffect(() => {
+    checkUserSession()
+  }, [])
+
+  async function checkUserSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    setSession(session)
+    
+    if (session) {
+      setCustomerInfo(prev => ({
+        ...prev,
+        email: session.user.email
+      }))
+    }
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    
+    if (!stripe || !elements) {
+      return
+    }
+
+    if (!session) {
+      setError('Please log in to complete your purchase')
+      return
+    }
+
+    if (!customerInfo.fullName || !customerInfo.country || !customerInfo.address || !customerInfo.city) {
+      setError('Please fill in all required fields')
+      return
+    }
+
     setLoading(true)
+    setError('')
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + '/',
+    try {
+      // Create payment intent
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: finalPrice * 100, // Convert to cents
+          currency: 'usd',
+          customerInfo,
+          referralCode: referral,
+          userId: session.user.id
+        }),
+      })
+
+      const { client_secret, error: backendError } = await response.json()
+
+      if (backendError) {
+        setError(backendError)
+        setLoading(false)
+        return
+      }
+
+      // Confirm payment with Stripe
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: {
+            name: customerInfo.fullName,
+            email: customerInfo.email,
+            address: {
+              line1: customerInfo.address,
+              city: customerInfo.city,
+              postal_code: customerInfo.postalCode,
+              country: getCountryCode(customerInfo.country)
+            }
+          }
+        }
+      })
+
+      if (stripeError) {
+        setError(stripeError.message)
+        setLoading(false)
+      } else if (paymentIntent.status === 'succeeded') {
+        // Payment successful, redirect to success page
+        router.push('/payment-success')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+      setLoading(false)
+    }
+  }
+
+  function getCountryCode(countryName) {
+    const countryCodes = {
+      'United States': 'US',
+      'United Kingdom': 'GB',
+      'Canada': 'CA',
+      'Australia': 'AU',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Spain': 'ES',
+      'Italy': 'IT',
+      'Netherlands': 'NL',
+      'Belgium': 'BE',
+      'Sweden': 'SE',
+      'Norway': 'NO',
+      'Denmark': 'DK',
+      'Finland': 'FI',
+      'Austria': 'AT',
+      'Switzerland': 'CH',
+      'Ireland': 'IE',
+      'Portugal': 'PT',
+      'Poland': 'PL',
+      'Japan': 'JP',
+      'Singapore': 'SG',
+      'Hong Kong': 'HK',
+      'New Zealand': 'NZ',
+      'South Korea': 'KR',
+      'Brazil': 'BR',
+      'Mexico': 'MX',
+      'India': 'IN',
+      'China': 'CN'
+    }
+    return countryCodes[countryName] || 'US'
+  }
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#ffffff',
+        backgroundColor: '#374151',
+        '::placeholder': {
+          color: '#9CA3AF',
+        },
       },
-    })
-
-    if (error) setMessage(error.message)
-    setLoading(false)
+      invalid: {
+        color: '#ef4444',
+      },
+    },
+    hidePostalCode: true
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-md mx-auto my-16 p-8 bg-white rounded shadow"
-    >
-      <h2 className="text-2xl font-semibold text-purple-700 mb-4">
-        Purchase “Making Money Online with AI”
-      </h2>
-      <PaymentElement className="mb-4" />
-      {message && (
-        <div className="text-red-500 mb-4">{message}</div>
-      )}
-      <button
-        disabled={!stripe || loading}
-        className={`w-full py-2 rounded text-white font-medium ${
-          loading
-            ? 'bg-purple-300'
-            : 'bg-purple-600 hover:bg-purple-700'
-        }`}
-      >
-        {loading ? 'Processing…' : 'Pay Now'}
-      </button>
-    </form>
+    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-6">
+      <div className="max-w-sm mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <Image
+            src="/logo.jpeg"
+            alt="Collab-Nest Logo"
+            width={60}
+            height={60}
+            className="rounded-full shadow-lg mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold mb-2">Complete Your Purchase</h1>
+          <p className="text-blue-200 text-sm">Secure checkout with Stripe</p>
+        </div>
+
+        {/* Order Summary */}
+        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-bold text-white mb-4">Order Summary</h2>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-blue-200">AI for Making Money Online</span>
+            <span className="text-white font-bold">${finalPrice}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-blue-200">8 Complete Modules</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-blue-200">Lifetime Access</span>
+          </div>
+          {referral && (
+            <div className="flex justify-between items-center mb-2 text-green-300">
+              <span>Referral Discount Applied</span>
+              <span>✓</span>
+            </div>
+          )}
+          <div className="border-t border-gray-600 pt-2 mt-4">
+            <div className="flex justify-between items-center text-lg font-bold">
+              <span className="text-white">Total</span>
+              <span className="text-green-400">${finalPrice}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Customer Information */}
+          <div className="bg-[#181e29] rounded-xl p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Billing Information</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-blue-200 text-sm mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={customerInfo.email}
+                  onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                  required
+                  disabled={!!session}
+                />
+              </div>
+
+              <div>
+                <label className="block text-blue-200 text-sm mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={customerInfo.fullName}
+                  onChange={(e) => setCustomerInfo({...customerInfo, fullName: e.target.value})}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                  required
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-blue-200 text-sm mb-1">Country *</label>
+                <select
+                  value={customerInfo.country}
+                  onChange={(e) => setCustomerInfo({...customerInfo, country: e.target.value})}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                  required
+                >
+                  <option value="">Select Country</option>
+                  {countries.map(country => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-blue-200 text-sm mb-1">Address *</label>
+                <input
+                  type="text"
+                  value={customerInfo.address}
+                  onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                  required
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-blue-200 text-sm mb-1">City *</label>
+                  <input
+                    type="text"
+                    value={customerInfo.city}
+                    onChange={(e) => setCustomerInfo({...customerInfo, city: e.target.value})}
+                    className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                    required
+                    placeholder="New York"
+                  />
+                </div>
+                <div>
+                  <label className="block text-blue-200 text-sm mb-1">Postal Code</label>
+                  <input
+                    type="text"
+                    value={customerInfo.postalCode}
+                    onChange={(e) => setCustomerInfo({...customerInfo, postalCode: e.target.value})}
+                    className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"
+                    placeholder="10001"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Information */}
+          <div className="bg-[#181e29] rounded-xl p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Payment Information</h3>
+            
+            <div className="mb-4">
+              <label className="block text-blue-200 text-sm mb-2">Card Details</label>
+              <div className="bg-gray-700 p-3 rounded-lg">
+                <CardElement options={cardElementOptions} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-blue-200 mb-4">
+              <span>🔒</span>
+              <span>Your payment information is secure and encrypted</span>
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-900 border border-red-600 rounded-xl p-4">
+              <p className="text-red-200 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={!stripe || loading}
+            className={`w-full py-3 rounded-xl font-bold text-base transition-all ${
+              loading 
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+            }`}
+          >
+            {loading ? 'Processing...' : `Complete Purchase - $${finalPrice}`}
+          </button>
+
+          <div className="text-center text-xs text-gray-400">
+            <p>By completing this purchase, you agree to our Terms of Service</p>
+            <p>Powered by Stripe • 256-bit SSL Encryption</p>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
 export default function Checkout() {
-  const router = useRouter()
-  const { price, referral } = router.query
-  const [loading, setLoading] = useState(false)
-  const [session, setSession] = useState(null)
-  const [paymentMethod, setPaymentMethod] = useState('')
-  const [country, setCountry] = useState('')
-
-  useEffect(() => {
-    checkSession()
-  }, [])
-
-  async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/login')
-      return
-    }
-    setSession(session)
-  }
-
-  const supportedCountries = [
-    { code: 'PK', name: 'Pakistan', currency: 'PKR', rate: 280 },
-    { code: 'BD', name: 'Bangladesh', currency: 'BDT', rate: 110 },
-    { code: 'AE', name: 'UAE', currency: 'AED', rate: 3.67 },
-    { code: 'OM', name: 'Oman', currency: 'OMR', rate: 0.38 },
-    { code: 'SA', name: 'Saudi Arabia', currency: 'SAR', rate: 3.75 },
-    { code: 'US', name: 'United States', currency: 'USD', rate: 1 }
-  ]
-
-  const selectedCountry = supportedCountries.find(c => c.code === country)
-  const localPrice = selectedCountry ? Math.round((price || 20) * selectedCountry.rate) : (price || 20)
-
-  async function handlePayment() {
-    setLoading(true)
-    
-    try {
-      if (country === 'US') {
-        // Stripe for US
-        const response = await fetch('/api/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            price: price || 20,
-            referral: referral || '',
-            userId: session.user.id
-          })
-        })
-        const { url } = await response.json()
-        window.location.href = url
-      } else {
-        // Alternative payment for other countries
-        const response = await fetch('/api/create-local-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            price: localPrice,
-            currency: selectedCountry.currency,
-            country: country,
-            referral: referral || '',
-            userId: session.user.id,
-            paymentMethod: paymentMethod
-          })
-        })
-        const { paymentUrl } = await response.json()
-        window.location.href = paymentUrl
-      }
-    } catch (error) {
-      console.error('Payment error:', error)
-      alert('Payment failed. Please try again.')
-    }
-    
-    setLoading(false)
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 py-10">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-[#181e29] rounded-xl p-8">
-          <h1 className="text-3xl font-bold mb-6 text-center">Complete Your Purchase</h1>
-          
-          {/* Course Summary */}
-          <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-2">AI for Making Money Online</h2>
-            <p className="text-blue-200 mb-4">Complete course with 8 modules + lifetime access</p>
-            <div className="text-2xl font-bold text-green-400">
-              {selectedCountry ? `${selectedCountry.currency} ${localPrice}` : `$${price || 20}`}
-            </div>
-            {referral && (
-              <div className="text-sm text-green-300 mt-2">
-                ✅ Referral code applied: {referral}
-              </div>
-            )}
-          </div>
-
-          {/* Country Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Select Your Country</label>
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full p-3 bg-gray-700 rounded-lg text-white"
-              required
-            >
-              <option value="">Choose your country</option>
-              {supportedCountries.map(c => (
-                <option key={c.code} value={c.code}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Payment Method Selection */}
-          {country && country !== 'US' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Payment Method</label>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="bank_transfer"
-                    checked={paymentMethod === 'bank_transfer'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mr-2"
-                  />
-                  Bank Transfer
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="mobile_wallet"
-                    checked={paymentMethod === 'mobile_wallet'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mr-2"
-                  />
-                  Mobile Wallet
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="crypto"
-                    checked={paymentMethod === 'crypto'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mr-2"
-                  />
-                  Cryptocurrency
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Terms Agreement */}
-          <div className="bg-red-900 bg-opacity-20 p-4 rounded-lg mb-6">
-            <h3 className="font-bold text-red-400 mb-2">⚠️ Important: No Refund Policy</h3>
-            <p className="text-sm text-red-200 mb-3">
-              All sales are final. No refunds, returns, or exchanges. By purchasing, you agree to our terms.
-            </p>
-            <Link href="/terms">
-              <a className="text-blue-400 hover:text-blue-300 text-sm underline">
-                Read full Terms and Conditions
-              </a>
-            </Link>
-          </div>
-
-          {/* Payment Button */}
-          <button
-            onClick={handlePayment}
-            disabled={loading || !country || (country !== 'US' && !paymentMethod)}
-            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-lg font-bold text-lg transition-all"
-          >
-            {loading ? 'Processing...' : `Complete Purchase - ${selectedCountry ? `${selectedCountry.currency} ${localPrice}` : `$${price || 20}`}`}
-          </button>
-
-          <div className="text-center mt-4">
-            <Link href="/">
-              <a className="text-gray-400 hover:text-gray-300">← Back to Home</a>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Elements stripe={stripePromise}>
+      <CheckoutForm />
+    </Elements>
   )
 }
 

@@ -46,10 +46,14 @@ export default async function handler(req, res) {
         id: price.product.id,
         title: price.product.name,
         description: price.product.description || 'Complete course access',
-        price_id: priceId
+        price_id: priceId,
+        stripe_price_id: priceId  // Added stripe_price_id key
       }
     } else {
-      courseData = course
+      courseData = {
+        ...course,
+        stripe_price_id: priceId  // Added stripe_price_id key
+      }
     }
 
     console.log('✅ Course data fetched successfully')
@@ -60,7 +64,8 @@ export default async function handler(req, res) {
         id: price.id,
         unit_amount: price.unit_amount,
         currency: price.currency,
-        product: price.product
+        product: price.product,
+        stripe_price_id: priceId  // Also added to price object for consistency
       }
     })
 

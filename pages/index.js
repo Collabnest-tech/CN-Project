@@ -59,7 +59,7 @@ export default function Home() {
 
       if (!error && user?.has_paid) {
         // User has paid, redirect to course
-        router.push('/course')
+        setUserPaid(true)
         return
       }
     } catch (error) {

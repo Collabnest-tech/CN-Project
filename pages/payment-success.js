@@ -94,7 +94,7 @@ export default function PaymentSuccess() {
           Redirecting to course in a few seconds...
         </p>
         <button 
-          onClick={() => router.push('/course')}
+          onClick={() => router.push('/courses')}
           className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
         >
           Access Course Now

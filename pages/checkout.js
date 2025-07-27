@@ -160,6 +160,19 @@ function CheckoutForm() {
         ...prev,
         email: session.user.email
       }))
+
+      // Check if user already paid
+      const { data, error } = await supabase
+        .from('users')
+        .select('has_paid')
+        .eq('id', session.user.id)
+        .single()
+      
+      if (!error && data && data.has_paid) {
+        // User already paid, redirect to courses
+        router.push('/courses')
+        return
+      }
     }
   }
 
@@ -228,10 +241,12 @@ function CheckoutForm() {
         setError(stripeError.message)
         setLoading(false)
       } else if (paymentIntent.status === 'succeeded') {
-        // Payment successful, redirect to success page
+        // Payment successful - redirect to success page
+        console.log('Payment succeeded, redirecting...')
         router.push('/payment-success')
       }
     } catch (err) {
+      console.error('Payment error:', err)
       setError('An unexpected error occurred')
       setLoading(false)
     }
@@ -449,7 +464,7 @@ function CheckoutForm() {
                 : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
             }`}
           >
-            {loading ? 'Processing...' : `Complete Purchase - $${finalPrice}`}
+            {loading ? 'Processing Payment...' : `Complete Purchase - $${finalPrice}`}
           </button>
 
           <div className="text-center text-xs text-gray-400">

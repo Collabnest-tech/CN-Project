@@ -6,10 +6,16 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
+    bodyParser: false,
   },
+}
+
+async function buffer(readable) {
+  const chunks = []
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+  }
+  return Buffer.concat(chunks)
 }
 
 export default async function handler(req, res) {
@@ -21,8 +27,8 @@ export default async function handler(req, res) {
   let event
 
   try {
-    const body = JSON.stringify(req.body)
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+    const buf = await buffer(req)
+    event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message)
     return res.status(400).json({ error: 'Webhook signature verification failed' })
@@ -47,17 +53,22 @@ async function handlePaymentSuccess(paymentIntent) {
   try {
     const { userId, referralCode } = paymentIntent.metadata
 
+    console.log('Processing payment success for user:', userId)
+
     // Update user payment status
     const { error: userError } = await supabase
       .from('users')
       .update({ 
         has_paid: true,
-        payment_date: new Date().toISOString()
+        payment_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .eq('id', userId)
 
     if (userError) {
       console.error('Error updating user payment status:', userError)
+    } else {
+      console.log('Successfully updated user payment status for:', userId)
     }
 
     // Update transaction status
@@ -71,10 +82,12 @@ async function handlePaymentSuccess(paymentIntent) {
 
     if (transactionError) {
       console.error('Error updating transaction:', transactionError)
+    } else {
+      console.log('Successfully updated transaction status for:', paymentIntent.id)
     }
 
     // Handle referral commission if referral code exists
-    if (referralCode) {
+    if (referralCode && referralCode.trim()) {
       await processReferralCommission(referralCode, userId, paymentIntent.amount / 100)
     }
 
@@ -87,6 +100,8 @@ async function handlePaymentSuccess(paymentIntent) {
 
 async function handlePaymentFailure(paymentIntent) {
   try {
+    console.log('Processing payment failure for:', paymentIntent.id)
+
     // Update transaction status
     const { error } = await supabase
       .from('transactions')
@@ -98,6 +113,8 @@ async function handlePaymentFailure(paymentIntent) {
 
     if (error) {
       console.error('Error updating failed transaction:', error)
+    } else {
+      console.log('Successfully updated failed transaction:', paymentIntent.id)
     }
 
   } catch (error) {
@@ -107,6 +124,8 @@ async function handlePaymentFailure(paymentIntent) {
 
 async function processReferralCommission(referralCode, purchaserUserId, amount) {
   try {
+    console.log('Processing referral commission for code:', referralCode)
+
     // Find the referrer
     const { data: referrer, error: referrerError } = await supabase
       .from('users')
@@ -119,8 +138,8 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
       return
     }
 
-    // Calculate commission (5% of purchase amount)
-    const commission = amount * 0.05
+    // Calculate commission ($5 flat rate)
+    const commission = 5.00
 
     // Create referral record
     const { error: referralError } = await supabase

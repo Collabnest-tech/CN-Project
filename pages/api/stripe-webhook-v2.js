@@ -73,40 +73,49 @@ export default async function handler(req, res) {
     })
   }
 
-  // ONLY handle payment_intent.succeeded for custom Stripe Elements
-  if (event.type === 'payment_intent.succeeded') {
-    console.log(`🔥 Processing payment_intent.succeeded`)
-    try {
-      await handlePaymentIntentSucceeded(event.data.object, event.id)
-      console.log('✅ Payment intent processed successfully')
+  try {
+    const event = stripe.webhooks.constructEvent(body, sig, endpointSecret)
+    
+    console.log('🔥 Received webhook event:', event.type)
+
+    // ONLY handle payment_intent.succeeded for custom Stripe Elements
+    if (event.type === 'payment_intent.succeeded') {
+      console.log(`🔥 Processing payment_intent.succeeded`)
+      try {
+        await handlePaymentIntentSucceeded(event.data.object, event.id)
+        console.log('✅ Payment intent processed successfully')
+        return res.status(200).json({ 
+          received: true, 
+          processed: true,
+          event_type: event.type,
+          event_id: event.id
+        })
+      } catch (error) {
+        console.error('❌ Error processing payment intent:', error)
+        return res.status(500).json({ 
+          error: 'Failed to process payment intent',
+          message: error.message 
+        })
+      }
+    } 
+    // Comment out checkout.session.completed since you're using custom elements
+    /*
+    else if (event.type === 'checkout.session.completed') {
+      // Not needed for custom Stripe Elements
+    }
+    */
+    else {
+      console.log(`ℹ️ Ignoring event type: ${event.type}`)
       return res.status(200).json({ 
         received: true, 
-        processed: true,
+        processed: false,
         event_type: event.type,
-        event_id: event.id
-      })
-    } catch (error) {
-      console.error('❌ Error processing payment intent:', error)
-      return res.status(500).json({ 
-        error: 'Failed to process payment intent',
-        message: error.message 
+        message: 'Event type not handled - only payment_intent.succeeded is processed for custom checkout'
       })
     }
-  } 
-  // Comment out checkout.session.completed since you're using custom elements
-  /*
-  else if (event.type === 'checkout.session.completed') {
-    // Not needed for custom Stripe Elements
-  }
-  */
-  else {
-    console.log(`ℹ️ Ignoring event type: ${event.type}`)
-    return res.status(200).json({ 
-      received: true, 
-      processed: false,
-      event_type: event.type,
-      message: 'Event type not handled - only payment_intent.succeeded is processed for custom checkout'
-    })
+  } catch (err) {
+    console.error('❌ Webhook signature verification failed:', err.message)
+    return res.status(400).send(`Webhook Error: ${err.message}`)
   }
 }
 
@@ -363,4 +372,60 @@ async function createTransactionRecord(paymentIntentId, userId, amount, sessionO
       })
       .select()
 
-    if
+    if (transactionError) {
+      throw transactionError
+    }
+
+    console.log('✅ Transaction record created:', data)
+  } catch (error) {
+    console.error('❌ Error creating transaction record:', error)
+    throw error
+  }
+}
+
+// Implement this function if it doesn't exist
+async function handleReferralReward(referralCode, userId, amount) {
+  try {
+    console.log('🔥 Processing referral reward')
+    
+    // Find referrer by referral code
+    const { data: referrer, error: referrerError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('referral_code', referralCode)
+      .single()
+
+    if (referrerError || !referrer) {
+      console.log('❌ Referrer not found:', referrerError)
+      return // Don't fail if referrer not found
+    }
+
+    console.log('🔥 Found referrer:', referrer.email)
+
+    // Calculate referral reward (e.g., 10% of the amount)
+    const rewardAmount = Math.round((amount * 0.1) / 100) * 100 // Convert to whole currency units
+
+    // Update referrer balance or create a new transaction for the reward
+    const { data: rewardTransaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: referrer.id,
+        amount: rewardAmount,
+        currency: 'gbp',
+        status: 'completed',
+        referral_reward: true,
+        created_at: new Date().toISOString()
+      })
+      .select()
+
+    if (transactionError) {
+      throw transactionError
+    }
+
+    console.log('✅ Referral reward processed:', rewardTransaction)
+
+  } catch (error) {
+    console.error('❌ Error processing referral reward:', error)
+    throw error
+  }
+}

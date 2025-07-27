@@ -34,7 +34,6 @@ function generateReferralCode() {
 export default async function handler(req, res) {
   console.log('🔥 WEBHOOK V2 CALLED - Method:', req.method)
   
-  // Immediately respond to any non-POST request
   if (req.method !== 'POST') {
     console.error('❌ Invalid method:', req.method)
     res.setHeader('Allow', 'POST')
@@ -65,7 +64,7 @@ export default async function handler(req, res) {
     }
     
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
-    console.log('🔥 Event constructed successfully:', event.type)
+    console.log('🔥 Event constructed successfully:', event.type, 'ID:', event.id)
   } catch (err) {
     console.error('❌ Webhook signature verification failed:', err.message)
     return res.status(400).json({ 
@@ -74,14 +73,17 @@ export default async function handler(req, res) {
     })
   }
 
-  console.log('🔥 Webhook event received:', event.type)
-  console.log('🔥 Event ID:', event.id)
+  // Handle multiple payment success events for maximum reliability
+  const paymentSuccessEvents = [
+    'payment_intent.succeeded',
+    'checkout.session.completed',
+    'invoice.payment_succeeded'
+  ]
 
-  // ONLY handle payment_intent.succeeded
-  if (event.type === 'payment_intent.succeeded') {
-    console.log('🔥 Processing payment_intent.succeeded')
+  if (paymentSuccessEvents.includes(event.type)) {
+    console.log(`🔥 Processing ${event.type}`)
     try {
-      await handlePaymentSuccess(event.data.object)
+      await handlePaymentSuccess(event.data.object, event.type)
       console.log('✅ Payment success handled')
       return res.status(200).json({ 
         received: true, 
@@ -107,150 +109,91 @@ export default async function handler(req, res) {
   }
 }
 
-async function handlePaymentSuccess(paymentIntent) {
+async function handlePaymentSuccess(eventObject, eventType) {
   try {
-    console.log('🔥 handlePaymentSuccess called')
-    console.log('🔥 Payment Intent ID:', paymentIntent.id)
-    console.log('🔥 Payment Intent metadata:', JSON.stringify(paymentIntent.metadata, null, 2))
-    console.log('🔥 Receipt email:', paymentIntent.receipt_email)
+    console.log(`🔥 handlePaymentSuccess called for ${eventType}`)
     
-    const { userId, referralCode, customerEmail } = paymentIntent.metadata
-    const receiptEmail = paymentIntent.receipt_email
-
-    console.log('🔥 Looking for user with:')
-    console.log('🔥 - Auth userId (from metadata):', userId)
-    console.log('🔥 - Customer email (from metadata):', customerEmail) 
-    console.log('🔥 - Receipt email:', receiptEmail)
-
-    // Method 1: Find user in YOUR custom users table by the auth user ID
-    let user = null
-    let lookupMethod = ''
-
-    if (userId) {
-      console.log('🔥 Looking up user in public.users table by auth user id:', userId)
-      const { data: userByAuthId, error: authError } = await supabase
-        .from('users') // This is your custom table
-        .select('*')
-        .eq('id', userId) // This should reference the auth.users.id
-        .single()
-
-      if (!authError && userByAuthId) {
-        user = userByAuthId
-        lookupMethod = 'auth_user_id'
-        console.log('✅ Found user in public.users by auth ID:', user)
-      } else {
-        console.log('❌ User not found in public.users by auth ID:', authError)
-      }
+    let userId, customerEmail, referralCode, paymentIntentId
+    
+    // Extract data based on event type
+    if (eventType === 'checkout.session.completed') {
+      console.log('🔥 Processing checkout session:', eventObject.id)
+      userId = eventObject.metadata?.userId
+      customerEmail = eventObject.customer_details?.email || eventObject.metadata?.customerEmail
+      referralCode = eventObject.metadata?.referralCode
+      paymentIntentId = eventObject.payment_intent
+    } else if (eventType === 'payment_intent.succeeded') {
+      console.log('🔥 Processing payment intent:', eventObject.id)
+      userId = eventObject.metadata?.userId
+      customerEmail = eventObject.metadata?.customerEmail || eventObject.receipt_email
+      referralCode = eventObject.metadata?.referralCode
+      paymentIntentId = eventObject.id
+    } else if (eventType === 'invoice.payment_succeeded') {
+      console.log('🔥 Processing invoice payment:', eventObject.id)
+      userId = eventObject.metadata?.userId
+      customerEmail = eventObject.customer_email
+      referralCode = eventObject.metadata?.referralCode
+      paymentIntentId = eventObject.payment_intent
     }
 
-    // Method 2: If not found by auth ID, try by email
-    if (!user && customerEmail) {
-      console.log('🔥 Looking up user in public.users table by email:', customerEmail)
-      const { data: userByEmail, error: emailError } = await supabase
-        .from('users') // Your custom table
-        .select('*')
-        .eq('email', customerEmail)
-        .single()
+    console.log('🔥 Extracted data:')
+    console.log('🔥 - Auth userId:', userId)
+    console.log('🔥 - Customer email:', customerEmail)
+    console.log('🔥 - Referral code:', referralCode)
+    console.log('🔥 - Payment Intent ID:', paymentIntentId)
 
-      if (!emailError && userByEmail) {
-        user = userByEmail
-        lookupMethod = 'customer_email'
-        console.log('✅ Found user in public.users by email:', user)
-      } else {
-        console.log('❌ User not found in public.users by email:', emailError)
-      }
+    if (!userId && !customerEmail) {
+      throw new Error('No user identifier found in event data')
     }
 
-    // Method 3: Try by receipt email
-    if (!user && receiptEmail) {
-      console.log('🔥 Looking up user in public.users table by receipt email:', receiptEmail)
-      const { data: userByReceipt, error: receiptError } = await supabase
-        .from('users') // Your custom table
-        .select('*')
-        .eq('email', receiptEmail)
-        .single()
-
-      if (!receiptError && userByReceipt) {
-        user = userByReceipt
-        lookupMethod = 'receipt_email'
-        console.log('✅ Found user in public.users by receipt email:', user)
-      } else {
-        console.log('❌ User not found in public.users by receipt email:', receiptError)
-      }
-    }
-
-    // If still not found, list users for debugging
+    // Find or create user
+    let user = await findOrCreateUser(userId, customerEmail)
+    
     if (!user) {
-      console.error('❌ User not found in public.users table by any method')
-      
-      // Debug: List users in your custom table
-      const { data: allUsers, error: listError } = await supabase
-        .from('users') // Your custom table
-        .select('id, email, has_paid')
-        .limit(5)
-
-      if (!listError) {
-        console.log('📋 Sample users in public.users table:', allUsers)
-      }
-
-      // Debug: Check auth.users table
-      const { data: authUsers, error: authListError } = await supabase
-        .from('auth.users')
-        .select('id, email')
-        .limit(5)
-
-      if (!authListError) {
-        console.log('📋 Sample users in auth.users table:', authUsers)
-      }
-      
-      throw new Error('User not found in public.users table')
+      throw new Error('Failed to find or create user')
     }
 
-    console.log(`✅ User found in public.users table via ${lookupMethod}:`, user)
+    console.log(`✅ Working with user:`, user.id, user.email)
 
-    // Generate referral code for this user
-    const userReferralCode = generateReferralCode()
-    console.log('🔥 Generated referral code:', userReferralCode)
+    // Check if already processed (prevent duplicate processing)
+    if (user.has_paid) {
+      console.log('ℹ️ User already marked as paid, skipping update')
+      return
+    }
 
-    // Update user payment status in YOUR custom users table
-    console.log('🔥 Attempting to update user in public.users table...')
-    const { data: updateResult, error: userError } = await supabase
-      .from('users') // Your custom table, not auth.users
+    // Generate referral code if user doesn't have one
+    const userReferralCode = user.referral_code || generateReferralCode()
+    
+    // Update user payment status
+    console.log('🔥 Updating user payment status...')
+    const { data: updateResult, error: updateError } = await supabase
+      .from('users')
       .update({ 
         has_paid: true,
         referral_code: userReferralCode,
         payment_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', user.id) // Use the ID from your custom table
+      .eq('id', user.id)
       .select()
 
-    if (userError) {
-      console.error('❌ Error updating user payment status:', userError)
-      console.error('❌ Full error details:', JSON.stringify(userError, null, 2))
-      throw new Error(`Failed to update user: ${userError.message}`)
-    } else {
-      console.log('✅ Successfully updated user payment status in public.users')
-      console.log('✅ Update result:', updateResult)
+    if (updateError) {
+      console.error('❌ Error updating user payment status:', updateError)
+      throw new Error(`Failed to update user: ${updateError.message}`)
     }
 
-    // Verify the update worked
-    const { data: verifyUser, error: verifyError } = await supabase
-      .from('users') // Your custom table
-      .select('id, email, has_paid, referral_code')
-      .eq('id', user.id)
-      .single()
+    console.log('✅ Successfully updated user payment status')
+    console.log('✅ Update result:', updateResult)
 
-    if (verifyError) {
-      console.error('❌ Error verifying update:', verifyError)
-    } else {
-      console.log('✅ User after update in public.users:', verifyUser)
+    // Update transaction record if exists
+    if (paymentIntentId) {
+      await updateTransactionRecord(paymentIntentId, user.id)
     }
 
     // Process referral commission if referral code was used
     if (referralCode && referralCode.trim()) {
       console.log('🔥 Processing referral commission for code:', referralCode)
-      await processReferralCommission(referralCode, user.id, paymentIntent.amount / 100)
+      await processReferralCommission(referralCode, user.id, eventObject.amount_total || eventObject.amount || 0)
     }
 
     console.log('✅ Payment processed successfully for user:', user.id)
@@ -262,15 +205,115 @@ async function handlePaymentSuccess(paymentIntent) {
   }
 }
 
+async function findOrCreateUser(userId, customerEmail) {
+  let user = null
+  let lookupMethod = ''
+
+  // Method 1: Find by auth user ID
+  if (userId) {
+    console.log('🔥 Looking up user by auth ID:', userId)
+    const { data: userByAuthId, error: authError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (!authError && userByAuthId) {
+      user = userByAuthId
+      lookupMethod = 'auth_user_id'
+      console.log('✅ Found user by auth ID')
+    } else {
+      console.log('❌ User not found by auth ID:', authError?.message)
+    }
+  }
+
+  // Method 2: Find by email
+  if (!user && customerEmail) {
+    console.log('🔥 Looking up user by email:', customerEmail)
+    const { data: userByEmail, error: emailError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', customerEmail)
+      .single()
+
+    if (!emailError && userByEmail) {
+      user = userByEmail
+      lookupMethod = 'email'
+      console.log('✅ Found user by email')
+    } else {
+      console.log('❌ User not found by email:', emailError?.message)
+    }
+  }
+
+  // Method 3: Create user if not found
+  if (!user) {
+    console.log('🔥 User not found, creating new user...')
+    
+    if (!customerEmail) {
+      throw new Error('Cannot create user without email')
+    }
+
+    // Use provided userId or generate one if not available
+    const newUserId = userId || crypto.randomUUID()
+    
+    const { data: newUser, error: createError } = await supabase
+      .from('users')
+      .insert({
+        id: newUserId,
+        email: customerEmail,
+        has_paid: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (createError) {
+      console.error('❌ Error creating user:', createError)
+      throw new Error(`Failed to create user: ${createError.message}`)
+    }
+
+    user = newUser
+    lookupMethod = 'created'
+    console.log('✅ Created new user:', user.id)
+  }
+
+  console.log(`✅ User resolved via ${lookupMethod}:`, user.id, user.email)
+  return user
+}
+
+async function updateTransactionRecord(paymentIntentId, userId) {
+  try {
+    console.log('🔥 Updating transaction record for payment intent:', paymentIntentId)
+    
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .eq('user_id', userId)
+
+    if (transactionError) {
+      console.error('❌ Error updating transaction:', transactionError)
+    } else {
+      console.log('✅ Transaction record updated')
+    }
+  } catch (error) {
+    console.error('❌ Error in updateTransactionRecord:', error)
+  }
+}
+
 async function processReferralCommission(referralCode, purchaserUserId, amount) {
   try {
     console.log('🔥 Processing referral commission for code:', referralCode)
 
-    // Look for referrer in YOUR custom users table
+    // Find referrer
     const { data: referrer, error: referrerError } = await supabase
-      .from('users') // Your custom table
+      .from('users')
       .select('id, referral_code, has_paid')
-      .eq('referral_code', referralCode)
+      .eq('referral_code', referralCode.trim().toUpperCase())
       .eq('has_paid', true)
       .single()
 
@@ -280,24 +323,25 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
     }
 
     const commission = 5.00
-    console.log(`🔥 Found referrer ${referrer.id}, awarding £${commission} commission`)
+    console.log(`🔥 Found referrer ${referrer.id}, awarding commission: £${commission}`)
 
-    // Try to create referral record (skip if table doesn't exist)
+    // Create referral record
     try {
       const { error: referralError } = await supabase
         .from('referrals')
         .insert({
           referrer_id: referrer.id,
-          referred_user_id: purchaserUserId,
-          commission_earned: commission,
-          purchase_amount: amount,
-          created_at: new Date().toISOString()
+          referred_id: purchaserUserId,
+          status: 'completed',
+          created_at: new Date().toISOString(),
+          paid_at: new Date().toISOString(),
+          referred_email: null // Will be populated if needed
         })
 
       if (referralError) {
         console.error('❌ Error creating referral record:', referralError)
       } else {
-        console.log(`✅ Referral commission of £${commission} processed for user ${referrer.id}`)
+        console.log(`✅ Referral commission of £${commission} processed`)
       }
     } catch (refError) {
       console.log('ℹ️ Referrals table might not exist, skipping referral commission')

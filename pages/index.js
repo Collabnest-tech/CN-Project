@@ -12,9 +12,12 @@ export default function Home() {
   const [userPaid, setUserPaid] = useState(false)
   const [current, setCurrent] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authChecking, setAuthChecking] = useState(true)
 
   useEffect(() => {
     checkSession()
+    checkAuthentication()
 
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
@@ -35,6 +38,18 @@ export default function Home() {
       console.error('Error checking session:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkAuthentication = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsAuthenticated(!!session)
+    } catch (error) {
+      console.error('Auth check error:', error)
+      setIsAuthenticated(false)
+    } finally {
+      setAuthChecking(false)
     }
   }
 
@@ -69,6 +84,16 @@ export default function Home() {
     // Always use default price - let checkout page handle referral logic
     const checkoutUrl = `/checkout?referral=${referralCode}`
     router.push(checkoutUrl)
+  }
+
+  const handlePaymentClick = () => {
+    if (isAuthenticated) {
+      // User is logged in, go to checkout
+      router.push('/checkout')
+    } else {
+      // User not logged in, go to auth page
+      router.push('/auth')
+    }
   }
 
   const carouselItems = [
@@ -205,6 +230,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Simplified Pricing */}
+          {!userPaid && ( // ✅ Only show pricing box if user hasn't paid
           <div className="lg:ml-8">
             <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-8 mb-6">
               <div className="text-center">
@@ -233,29 +259,46 @@ export default function Home() {
             
             {/* CTA Buttons */}
             <div className="space-y-3">
-              {userPaid ? (
-                <Link href="/courses">
-                  <a className="block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all text-center">
-                    Continue Your Journey
-                  </a>
-                </Link>
-              ) : (
-                <>
-                  <button
-                    onClick={handlePurchase}
-                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all"
-                  >
-                    Get Access Now - ${displayPrice}
-                  </button>
-                  <Link href="/courses">
-                    <a className="block border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all text-center">
-                      Explore What's Inside
-                    </a>
-                  </Link>
-                </>
-              )}
+              <button
+                onClick={handlePaymentClick}
+                className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors w-full"
+              >
+                {authChecking ? (
+                  'Loading...'
+                ) : isAuthenticated ? (
+                  `Get Started Now - $${displayPrice}`
+                ) : (
+                  `Sign In to Purchase - $${displayPrice}`
+                )}
+              </button>
+              <Link href="/courses">
+                <a className="block border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all text-center">
+                  Explore What's Inside
+                </a>
+              </Link>
             </div>
           </div>
+          )}
+
+          {/* ✅ Show welcome message for paid users */}
+          {userPaid && (
+            <div className="lg:ml-8">
+              <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-8 mb-6">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🎉</div>
+                  <h2 className="text-2xl font-bold text-white mb-3">Welcome Back!</h2>
+                  <p className="text-green-200 mb-6 text-sm lg:text-base">
+                    You're already part of our AI Mastery community. Continue your journey and unlock your potential!
+                  </p>
+                  <Link href="/courses">
+                    <a className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block">
+                      Continue Learning
+                    </a>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Carousel */}
@@ -273,20 +316,34 @@ export default function Home() {
                   </p>
                 </div>
                 
-                {/* Responsive Image */}
+                {/* ✅ Fixed Image Container - Use key to force re-render */}
                 <div className="order-first lg:order-last">
                   <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
                     <img
+                      key={`carousel-image-${current}`} // ✅ Add key to force re-render
                       src={carouselItems[current].img}
                       alt={carouselItems[current].title}
                       className="w-full h-full rounded-xl shadow-lg object-cover"
                       onError={(e) => {
                         console.log('Image failed to load:', carouselItems[current].img)
                         e.target.style.display = 'none'
-                        e.target.nextElementSibling.style.display = 'flex'
+                        const fallback = e.target.parentElement.querySelector('.fallback-icon')
+                        if (fallback) {
+                          fallback.style.display = 'flex'
+                        }
+                      }}
+                      onLoad={(e) => {
+                        // ✅ Hide fallback when image loads successfully
+                        const fallback = e.target.parentElement.querySelector('.fallback-icon')
+                        if (fallback) {
+                          fallback.style.display = 'none'
+                        }
                       }}
                     />
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center flex" style={{ display: 'none' }}>
+                    <div 
+                      className="fallback-icon absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center" 
+                      style={{ display: 'none' }}
+                    >
                       <div className="text-4xl lg:text-6xl opacity-60 text-white">{carouselItems[current].icon}</div>
                     </div>
                   </div>

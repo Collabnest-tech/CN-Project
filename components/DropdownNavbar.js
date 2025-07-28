@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 
 export default function DropdownNavbar({ session }) {
   const [open, setOpen] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -19,10 +21,41 @@ export default function DropdownNavbar({ session }) {
     }
   }, [open])
 
+  // ✅ Mobile logo refresh fix
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const isMobile = window.innerWidth <= 768
+      if (isMobile) {
+        // Force logo reload on mobile
+        setTimeout(() => {
+          const logoImg = document.querySelector('img[alt="Collab-Nest Logo"]')
+          if (logoImg) {
+            const src = logoImg.src
+            logoImg.src = ''
+            logoImg.src = src + '?t=' + Date.now()
+          }
+        }, 100)
+      }
+    }
+
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => router.events.off('routeChangeComplete', handleRouteChange)
+  }, [router])
+
   async function handleSignOut() {
     await supabase.auth.signOut()
     setOpen(false)
     window.location.href = '/'
+  }
+
+  // ✅ Protected route handler (only for Profile & Referrals)
+  const handleProfileClick = () => {
+    setOpen(false)
+    if (!session) {
+      router.push('/login')
+    } else {
+      router.push('/profile-referrals')
+    }
   }
 
   return (
@@ -50,23 +83,27 @@ export default function DropdownNavbar({ session }) {
             <span className="ml-2 sm:ml-3 text-base sm:text-lg font-bold text-purple-700">Collab-Nest</span>
           </div>
           
+          {/* ✅ No auth protection - accessible to everyone */}
           <Link href="/">
             <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
               Home
             </a>
           </Link>
           
+          {/* ✅ No auth protection - accessible to everyone */}
           <Link href="/courses">
             <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
               Courses
             </a>
           </Link>
           
-          <Link href="/profile-referrals">
-            <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
-              Profile & Referrals
-            </a>
-          </Link>
+          {/* ✅ Auth protection ONLY for Profile & Referrals */}
+          <button
+            onClick={handleProfileClick}
+            className="block w-full text-left px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base"
+          >
+            Profile & Referrals
+          </button>
           
           {session ? (
             <>

@@ -153,7 +153,7 @@ export default function Courses() {
               </p>
               <Link href="/checkout">
                 <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 lg:px-8 py-2 lg:py-3 rounded-lg font-bold text-sm lg:text-base transition-all">
-                  Unlock Course - $15
+                  Unlock Course - $25
                 </a>
               </Link>
             </div>

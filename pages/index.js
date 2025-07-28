@@ -460,6 +460,39 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* ✅ Referral Discount Box */}
+        <div className="mt-6 p-4 bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/20 rounded-xl">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="text-2xl">💰</span>
+            <h4 className="text-green-300 font-bold text-lg">Referral Program</h4>
+            <span className="text-2xl">💰</span>
+          </div>
+          
+          <div className="text-center space-y-2">
+            <p className="text-green-200 text-sm">
+              🎉 <span className="font-semibold">Get $5 OFF</span> with a referral code!
+            </p>
+            <p className="text-blue-200 text-xs">
+              💸 <span className="font-semibold">Refer friends and earn $5</span> for each successful purchase
+            </p>
+          </div>
+          
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Enter referral code (optional)"
+              className="flex-1 px-3 py-2 bg-[#2a3441] border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+            <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all">
+              Apply
+            </button>
+          </div>
+          
+          <p className="text-center text-xs text-gray-400 mt-2">
+            Valid referral codes reduce price from $15 to $10
+          </p>
+        </div>
       </div>
     </div>
   )

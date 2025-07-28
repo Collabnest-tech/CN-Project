@@ -279,33 +279,33 @@ export default function Checkout() {
     }
   }, [referral])
 
-  // Update the fetchCourseDetails function to call the correct API:
+  // Update just the fetchCourseDetails function to see what's happening:
 
   const fetchCourseDetails = async (priceId) => {
     try {
-      console.log('🔍 Fetching course details for priceId:', priceId)
-      console.log('🔍 Price ID exists?', !!priceId)
+      console.log('🔍 Fetching course details for priceId:', priceId) // ✅ Add this
+      console.log('🔍 Price ID exists?', !!priceId) // ✅ Add this
       
       if (!priceId) {
         console.error('❌ No priceId provided to fetchCourseDetails')
         return
       }
       
-      const response = await fetch('/api/get-price-details', { // ✅ Fixed API endpoint
+      const response = await fetch('/api/get-course-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId }),
       })
       
-      console.log('🔍 Response status:', response.status)
+      console.log('🔍 Response status:', response.status) // ✅ Add this
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Course details received:', data)
+        console.log('✅ Course details received:', data) // ✅ Add this
         setCourseDetails(data)
       } else {
         const errorData = await response.json()
-        console.error('❌ API error response:', errorData)
+        console.error('❌ API error response:', errorData) // ✅ Add this
       }
     } catch (error) {
       console.error('❌ Fetch error:', error)

@@ -58,10 +58,22 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
     }
 
     try {
-      // Create payment intent with all required metadata
+      // ✅ Get auth token
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        setError('Please log in to complete your purchase')
+        setLoading(false)
+        return
+      }
+
+      // Create payment intent with auth token
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // ✅ Add auth token
+        },
         body: JSON.stringify({
           priceId: priceId,
           customerInfo: {
@@ -69,12 +81,13 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
             name: customerInfo.name,
             country: customerInfo.country
           },
-          referralCode: referral || '', // ✅ Pass referral code
+          referralCode: referral || '',
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Network response was not ok')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Network response was not ok')
       }
 
       const { client_secret, error: apiError } = await response.json()

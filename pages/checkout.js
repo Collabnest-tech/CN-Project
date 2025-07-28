@@ -13,7 +13,6 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
   const elements = useElements()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [session, setSession] = useState(null)
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
@@ -21,22 +20,18 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
   })
 
   useEffect(() => {
-    checkSession()
-  }, [])
-
-  const checkSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/auth')
-      return
+    // Get user session and pre-fill email
+    const getUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.email) {
+        setCustomerInfo(prev => ({
+          ...prev,
+          email: session.user.email
+        }))
+      }
     }
-    setSession(session)
-    setCustomerInfo(prev => ({
-      ...prev,
-      email: session.user.email || '',
-      name: session.user.user_metadata?.full_name || ''
-    }))
-  }
+    getUserSession()
+  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -49,8 +44,21 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
       return
     }
 
+    // ✅ Validate required fields
+    if (!customerInfo.name.trim()) {
+      setError('Full name is required')
+      setLoading(false)
+      return
+    }
+
+    if (!customerInfo.email.trim()) {
+      setError('Email is required')
+      setLoading(false)
+      return
+    }
+
     try {
-      // Create payment intent with referral code metadata
+      // Create payment intent with all required metadata
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,14 +69,22 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
             name: customerInfo.name,
             country: customerInfo.country
           },
-          referralCode: referral || '', // ✅ This comes from URL or manual input
+          referralCode: referral || '', // ✅ Pass referral code
         }),
       })
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
 
       const { client_secret, error: apiError } = await response.json()
 
       if (apiError) {
         throw new Error(apiError)
+      }
+
+      if (!client_secret) {
+        throw new Error('No client secret received')
       }
 
       // Confirm payment
@@ -88,6 +104,7 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
 
       onSuccess()
     } catch (err) {
+      console.error('Payment error:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -228,83 +245,34 @@ export default function Checkout() {
   const [referralChecking, setReferralChecking] = useState(false)
 
   useEffect(() => {
-    validateReferralAndSetPrice()
+    // Initialize with default price first
+    setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+    fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+
+    // Then validate referral if provided
+    if (referral) {
+      setReferralInput(referral)
+      validateReferralCode(referral)
+    }
   }, [referral])
-
-  const validateReferralAndSetPrice = async () => {
-    let isValidReferral = false
-    
-    // Validate referral code if provided
-    if (referral && referral.trim()) {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, referral_code, has_paid, full_name')
-          .eq('referral_code', referral.trim().toUpperCase())
-          .eq('has_paid', true)
-          .single()
-
-        if (!error && data) {
-          isValidReferral = true
-          setReferralValid(true)
-        } else {
-          setReferralValid(false)
-        }
-      } catch (error) {
-        console.error('Error validating referral code:', error)
-        setReferralValid(false)
-      }
-    }
-
-    // Set price ID based on referral validity
-    const priceId = isValidReferral 
-      ? process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID 
-      : process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID
-
-    setSelectedPriceId(priceId)
-    
-    // Fetch course details with the selected price
-    if (priceId) {
-      fetchCourseDetails(priceId)
-    }
-  }
 
   const fetchCourseDetails = async (priceId) => {
     try {
-      const response = await fetch('/api/get-price-details', {
+      const response = await fetch('/api/get-course-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId })
+        body: JSON.stringify({ priceId }),
       })
       
       if (response.ok) {
         const data = await response.json()
-        setCourseDetails(data.price)
+        setCourseDetails(data)
       }
     } catch (error) {
       console.error('Error fetching course details:', error)
-      // Fallback pricing
-      setCourseDetails({
-        id: priceId,
-        unit_amount: isValidReferral ? 2000 : 2500, // $20 or $25
-        currency: 'usd',
-        product: {
-          name: 'AI for Making Money Online',
-          description: 'Full Course Access & Lifetime Updates'
-        }
-      })
     }
   }
 
-  const handlePaymentSuccess = (paymentIntentId) => {
-    setPaymentSuccess(true)
-    // Redirect to course after a delay
-    setTimeout(() => {
-      router.push('/courses?payment=success')
-    }, 3000)
-  }
-
-  // Validate referral code
   const validateReferralCode = async (code) => {
     if (!code.trim()) {
       setReferralValid(null)
@@ -327,10 +295,12 @@ export default function Checkout() {
         setReferralValid(true)
         setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID)
         fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID)
+        console.log('✅ Valid referral code applied:', code)
       } else {
         setReferralValid(false)
         setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
         fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+        console.log('❌ Invalid referral code:', code)
       }
     } catch (error) {
       console.error('Error validating referral code:', error)
@@ -342,148 +312,103 @@ export default function Checkout() {
     }
   }
 
-  // Apply referral handler
+  // ✅ Fix the apply referral function to update URL
   const handleApplyReferral = () => {
-    validateReferralCode(referralInput)
+    const trimmedCode = referralInput.trim().toUpperCase()
+    
+    if (trimmedCode) {
+      // Update URL with referral code
+      router.push(`/checkout?referral=${trimmedCode}`, undefined, { shallow: true })
+      // Validate the referral code
+      validateReferralCode(trimmedCode)
+    } else {
+      // Remove referral from URL if empty
+      router.push('/checkout', undefined, { shallow: true })
+      validateReferralCode('')
+    }
   }
 
-  if (paymentSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="text-green-500 text-6xl mb-6">✅</div>
-          <h1 className="text-3xl font-bold text-green-700 mb-4">Payment Successful!</h1>
-          <p className="text-gray-700 mb-6">
-            Thank you for your purchase! You now have lifetime access to the AI for Making Money Online course.
-          </p>
-          <div className="bg-green-100 border border-green-400 rounded-lg p-4 mb-6">
-            <p className="text-green-800 text-sm">
-              <strong>Welcome to the course!</strong><br/>
-              You'll be redirected to your course dashboard in a few seconds.
-            </p>
-          </div>
-          <button 
-            onClick={() => router.push('/courses')}
-            className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
-          >
-            Access Course Now
-          </button>
-        </div>
-      </div>
-    )
+  const handlePaymentSuccess = () => {
+    setPaymentSuccess(true)
+    router.push('/courses')
   }
+
+  // ... loading state
 
   return (
-    <>
-      <Head>
-        <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-      </Head>
-      
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-              Complete Your Purchase
-            </h1>
-
-            {/* Course Summary */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">
-                    {courseDetails?.product?.name || "AI for Making Money Online"}
-                  </h3>
-                  <p className="text-gray-600">
-                    {courseDetails?.product?.description || "Full Course Access & Lifetime Updates"}
-                  </p>
-                  {selectedPriceId && (
-                    <p className="text-sm text-gray-500 mt-1">Price ID: {selectedPriceId}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-green-600">
-                    {courseDetails ? 
-                      `${courseDetails.currency.toUpperCase()} ${(courseDetails.unit_amount / 100).toFixed(2)}` 
-                      : 'Loading...'
-                    }
-                  </p>
-                </div>
-              </div>
-              
-              {referral && (
-                <div className={`mt-4 p-3 rounded-lg ${
-                  referralValid 
-                    ? 'bg-green-100 border border-green-400' 
-                    : 'bg-red-100 border border-red-400'
-                }`}>
-                  <p className={`text-sm ${referralValid ? 'text-green-800' : 'text-red-800'}`}>
-                    {referralValid 
-                      ? `🎉 Referral code applied: ${referral.toUpperCase()} - You saved $5!`
-                      : `❌ Invalid referral code: ${referral.toUpperCase()}`
-                    }
-                  </p>
-                </div>
-              )}
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Order Summary */}
+        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+          <div className="flex justify-between items-center">
+            <span>AI Marketing Mastery Course</span>
+            <span className="font-semibold">
+              {courseDetails ? `${courseDetails.currency.toUpperCase()} ${(courseDetails.unit_amount / 100).toFixed(2)}` : 'Loading...'}
+            </span>
+          </div>
+          {referralValid && (
+            <div className="mt-2 text-green-600 text-sm">
+              ✅ Referral discount applied - You saved $5!
             </div>
+          )}
+        </div>
 
-            {/* Referral Code Section */}
-            <div className="bg-white rounded-lg p-6 mb-8 border">
-              <h3 className="text-lg font-semibold mb-4">Have a Referral Code?</h3>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={referralInput}
-                  onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                  placeholder="Enter referral code"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  maxLength={10}
-                />
-                <button
-                  onClick={handleApplyReferral}
-                  disabled={referralChecking || !referralInput.trim()}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {referralChecking ? 'Checking...' : 'Apply'}
-                </button>
-              </div>
-              
-              {/* Referral Status */}
-              {referralValid === true && (
-                <div className="mt-3 p-3 bg-green-100 border border-green-400 rounded-lg">
-                  <p className="text-green-800 text-sm">
-                    🎉 Valid referral code applied! You saved $5!
-                  </p>
-                </div>
-              )}
-              {referralValid === false && (
-                <div className="mt-3 p-3 bg-red-100 border border-red-400 rounded-lg">
-                  <p className="text-red-800 text-sm">
-                    ❌ Invalid referral code. Please check and try again.
-                  </p>
-                </div>
-              )}
-              
-              <p className="text-sm text-gray-500 mt-2">
-                Enter a valid referral code to save $5 on your purchase!
+        {/* ✅ Referral Code Section */}
+        <div className="bg-white rounded-lg p-6 mb-8 border">
+          <h3 className="text-lg font-semibold mb-4">Have a Referral Code?</h3>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={referralInput}
+              onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+              placeholder="Enter referral code"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              maxLength={10}
+            />
+            <button
+              onClick={handleApplyReferral}
+              disabled={referralChecking}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {referralChecking ? 'Checking...' : 'Apply'}
+            </button>
+          </div>
+          
+          {/* Referral Status */}
+          {referralValid === true && (
+            <div className="mt-3 p-3 bg-green-100 border border-green-400 rounded-lg">
+              <p className="text-green-800 text-sm">
+                🎉 Valid referral code applied! You saved $5!
               </p>
             </div>
-
-            {/* Stripe Elements Wrapper */}
-            {selectedPriceId && (
-              <Elements stripe={stripePromise}>
-                <CheckoutForm 
-                  priceId={selectedPriceId}
-                  referral={referralValid ? referralInput : ''}
-                  courseDetails={courseDetails}
-                  onSuccess={handlePaymentSuccess}
-                />
-              </Elements>
-            )}
-          </div>
+          )}
+          {referralValid === false && (
+            <div className="mt-3 p-3 bg-red-100 border border-red-400 rounded-lg">
+              <p className="text-red-800 text-sm">
+                ❌ Invalid referral code. Please check and try again.
+              </p>
+            </div>
+          )}
+          
+          <p className="text-sm text-gray-500 mt-2">
+            Enter a valid referral code to save $5 on your purchase!
+          </p>
         </div>
+
+        {/* Checkout Form */}
+        {selectedPriceId && (
+          <Elements stripe={stripePromise}>
+            <CheckoutForm 
+              priceId={selectedPriceId}
+              referral={referralValid ? referralInput : ''} // ✅ Only pass if valid
+              courseDetails={courseDetails}
+              onSuccess={handlePaymentSuccess}
+            />
+          </Elements>
+        )}
       </div>
-    </>
+    </div>
   )
 }
 

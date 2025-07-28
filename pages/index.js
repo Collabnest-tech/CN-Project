@@ -19,11 +19,14 @@ export default function Home() {
     checkSession()
     checkAuthentication()
 
+    // ✅ Reset carousel to first slide when returning to homepage
+    setCurrent(0)
+
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [router.asPath]) // ✅ Add router.asPath as dependency
 
   const checkSession = async () => {
     try {
@@ -78,8 +81,8 @@ export default function Home() {
       const checkoutUrl = `/checkout${referralCode ? `?referral=${referralCode}` : ''}`
       router.push(checkoutUrl)
     } else {
-      // User not logged in, go to auth page
-      router.push('/auth')
+      // User not logged in, go to login page
+      router.push('/login')
     }
   }
 

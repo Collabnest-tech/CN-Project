@@ -242,6 +242,8 @@ export default function Checkout() {
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [referralValid, setReferralValid] = useState(null)
   const [selectedPriceId, setSelectedPriceId] = useState(null)
+  const [referralInput, setReferralInput] = useState(referral || '')
+  const [referralChecking, setReferralChecking] = useState(false)
 
   useEffect(() => {
     validateReferralAndSetPrice()
@@ -318,6 +320,49 @@ export default function Checkout() {
     setTimeout(() => {
       router.push('/courses?payment=success')
     }, 3000)
+  }
+
+  // Validate referral code
+  const validateReferralCode = async (code) => {
+    if (!code.trim()) {
+      setReferralValid(null)
+      setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+      fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+      return
+    }
+
+    setReferralChecking(true)
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, referral_code, has_paid, full_name')
+        .eq('referral_code', code.trim().toUpperCase())
+        .eq('has_paid', true)
+        .single()
+
+      if (!error && data) {
+        setReferralValid(true)
+        setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID)
+        fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID)
+      } else {
+        setReferralValid(false)
+        setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+        fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+      }
+    } catch (error) {
+      console.error('Error validating referral code:', error)
+      setReferralValid(false)
+      setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+      fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+    } finally {
+      setReferralChecking(false)
+    }
+  }
+
+  // Apply referral handler
+  const handleApplyReferral = () => {
+    validateReferralCode(referralInput)
   }
 
   if (paymentSuccess) {
@@ -400,15 +445,59 @@ export default function Checkout() {
               )}
             </div>
 
+            {/* Referral Code Section */}
+            <div className="bg-white rounded-lg p-6 mb-8 border">
+              <h3 className="text-lg font-semibold mb-4">Have a Referral Code?</h3>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={referralInput}
+                  onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                  placeholder="Enter referral code"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  maxLength={10}
+                />
+                <button
+                  onClick={handleApplyReferral}
+                  disabled={referralChecking || !referralInput.trim()}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {referralChecking ? 'Checking...' : 'Apply'}
+                </button>
+              </div>
+              
+              {/* Referral Status */}
+              {referralValid === true && (
+                <div className="mt-3 p-3 bg-green-100 border border-green-400 rounded-lg">
+                  <p className="text-green-800 text-sm">
+                    🎉 Valid referral code applied! You saved $5!
+                  </p>
+                </div>
+              )}
+              {referralValid === false && (
+                <div className="mt-3 p-3 bg-red-100 border border-red-400 rounded-lg">
+                  <p className="text-red-800 text-sm">
+                    ❌ Invalid referral code. Please check and try again.
+                  </p>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-500 mt-2">
+                Enter a valid referral code to save $5 on your purchase!
+              </p>
+            </div>
+
             {/* Stripe Elements Wrapper */}
-            <Elements stripe={stripePromise}>
-              <CheckoutForm 
-                priceId={selectedPriceId}
-                referral={referralValid ? referral : ''}
-                courseDetails={courseDetails}
-                onSuccess={handlePaymentSuccess}
-              />
-            </Elements>
+            {selectedPriceId && (
+              <Elements stripe={stripePromise}>
+                <CheckoutForm 
+                  priceId={selectedPriceId}
+                  referral={referralValid ? referralInput : ''}
+                  courseDetails={courseDetails}
+                  onSuccess={handlePaymentSuccess}
+                />
+              </Elements>
+            )}
           </div>
         </div>
       </div>

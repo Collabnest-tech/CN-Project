@@ -75,25 +75,25 @@ export default function Home() {
     {
       title: "While Others Hesitate, Fortunes Are Being Made",
       description: "Every day you wait, someone else is building their AI-powered income stream. The early adopters are already pulling ahead.",
-      img: "/images/fortune-makers.jpg",
+      img: "/fortune-makers.jpg", // ✅ Place image in public/ folder
       icon: "🏆"
     },
     {
       title: "The Opportunity That Only Comes Once",
       description: "Just like the internet boom of the 90s, AI is creating a new class of entrepreneurs. The window is still open, but not for long.",
-      img: "/images/opportunity-window.jpg",
+      img: "/opportunity-window.jpg", // ✅ Place image in public/ folder
       icon: "⏰"
     },
     {
-      title: "Success Stories Are Being Written Right Now",
+      title: "Success Stories Are Being Written Right Now", 
       description: "People with no technical background are earning thousands monthly. They started where you are today - curious and ready to learn.",
-      img: "/images/success-stories.jpg",
+      img: "/success-stories.jpg", // ✅ Place image in public/ folder
       icon: "📈"
     },
     {
       title: "The Skills That Separate the Successful",
       description: "While most people struggle with traditional methods, our students master AI tools that multiply their productivity and income potential.",
-      img: "/images/skill-advantage.jpg",
+      img: "/skill-advantage.jpg", // ✅ Place image in public/ folder
       icon: "🧠"
     }
   ]

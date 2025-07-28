@@ -373,54 +373,48 @@ async function createTransactionRecord(paymentIntentId, userId, amount, sessionO
   }
 }
 
+// Simplified version using only users table:
+
 async function processReferralCommission(referralCode, purchaserUserId, amount) {
   try {
     console.log('🔥 Processing referral commission for code:', referralCode)
-
-    // Find referrer
+    
+    // Find the user who owns the referral code
     const { data: referrer, error: referrerError } = await supabase
       .from('users')
-      .select('id, referral_code, has_paid')
-      .eq('referral_code', referralCode.trim().toUpperCase())
+      .select('id, full_name, email, referral_code, has_paid, referral_earnings, referral_count')
+      .eq('referral_code', referralCode.toUpperCase())
       .eq('has_paid', true)
       .single()
 
     if (referrerError || !referrer) {
-      console.error('❌ Valid referrer not found for code:', referralCode)
+      console.log('❌ Referrer not found or not a paid user')
       return
     }
 
-    // Check if referral already exists
-    const { data: existingReferral } = await supabase
-      .from('referrals')
-      .select('id')
-      .eq('referrer_id', referrer.id)
-      .eq('referred_id', purchaserUserId)
-      .single()
+    console.log('🔥 Found referrer:', referrer.email)
 
-    if (existingReferral) {
-      console.log('ℹ️ Referral already exists, skipping commission')
-      return
-    }
+    // ✅ Calculate new totals
+    const commissionAmount = 5.00 // $5 per referral
+    const newEarnings = (referrer.referral_earnings || 0) + commissionAmount
+    const newCount = (referrer.referral_count || 0) + 1
 
-    console.log(`🔥 Found referrer ${referrer.id}, creating referral record`)
-
-    // Create referral record
-    const { error: referralError } = await supabase
-      .from('referrals')
-      .insert({
-        referrer_id: referrer.id,
-        referred_id: purchaserUserId,
-        status: 'completed',
-        created_at: new Date().toISOString(),
-        paid_at: new Date().toISOString()
+    // Update referrer's earnings and count
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        referral_earnings: newEarnings,
+        referral_count: newCount
       })
+      .eq('id', referrer.id)
 
-    if (referralError) {
-      console.error('❌ Error creating referral record:', referralError)
-    } else {
-      console.log(`✅ Referral commission processed for ${referrer.id}`)
+    if (updateError) {
+      console.error('❌ Error updating referrer:', updateError)
+      return
     }
+
+    console.log(`✅ Referral commission processed: $${commissionAmount} for ${referrer.email}`)
+    console.log(`✅ New totals: ${newCount} referrals, $${newEarnings} total earnings`)
 
   } catch (error) {
     console.error('❌ Error processing referral commission:', error)

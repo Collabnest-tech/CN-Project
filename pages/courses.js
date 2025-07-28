@@ -10,7 +10,7 @@ export default function Courses() {
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [currentModule, setCurrentModule] = useState(1)
+  // const [currentModule, setCurrentModule] = useState(1)
 
   useEffect(() => {
     checkUserSession()
@@ -37,34 +37,34 @@ export default function Courses() {
       if (!error && data) {
         setUserPaid(data.has_paid)
         
-        // If user has paid, get their progress
-        if (data.has_paid) {
-          await fetchUserProgress(session.user.id)
-        }
+        // // If user has paid, get their progress
+        // if (data.has_paid) {
+        //   await fetchUserProgress(session.user.id)
+        // }
       }
     }
     setLoading(false)
   }
 
-  async function fetchUserProgress(userId) {
-    try {
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('module_id')
-        .eq('user_id', userId)
-        .single()
+  // async function fetchUserProgress(userId) {
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('user_progress')
+  //       .select('module_id')
+  //       .eq('user_id', userId)
+  //       .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        throw error
-      }
+  //     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+  //       throw error
+  //     }
 
-      // Set current module (default to 1 if no progress found)
-      setCurrentModule(data?.module_id || 1)
-    } catch (error) {
-      console.error('Error fetching progress:', error)
-      setCurrentModule(1) // Default to first module
-    }
-  }
+  //     // Set current module (default to 1 if no progress found)
+  //     setCurrentModule(data?.module_id || 1)
+  //   } catch (error) {
+  //     console.error('Error fetching progress:', error)
+  //     setCurrentModule(1) // Default to first module
+  //   }
+  // }
 
   const handleModuleClick = async (module) => {
     if (!userPaid) {
@@ -73,20 +73,20 @@ export default function Courses() {
     }
 
     try {
-      // Only allow access to current module or completed modules
-      if (module.id > currentModule) {
-        alert('Complete the previous modules first!')
-        return
-      }
+      // // Only allow access to current module or completed modules
+      // if (module.id > currentModule) {
+      //   alert('Complete the previous modules first!')
+      //   return
+      // }
 
-      // Update last accessed time
-      await supabase
-        .from('user_progress')
-        .upsert({
-          user_id: session.user.id,
-          module_id: currentModule,
-          last_accessed: new Date().toISOString(),
-        })
+      // // Update last accessed time
+      // await supabase
+      //   .from('user_progress')
+      //   .upsert({
+      //     user_id: session.user.id,
+      //     module_id: currentModule,
+      //     last_accessed: new Date().toISOString(),
+      //   })
 
       // Navigate to module content
       router.push(`/module/${module.id}`)
@@ -103,8 +103,8 @@ export default function Courses() {
     )
   }
 
-  const completedModules = currentModule - 1
-  const progressPercentage = (completedModules / moduleData.length) * 100
+  // const completedModules = currentModule - 1
+  // const progressPercentage = (completedModules / moduleData.length) * 100
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white">
@@ -125,8 +125,8 @@ export default function Courses() {
             <p className="text-blue-200 text-sm lg:text-xl max-w-3xl mx-auto">Master 8 modules to build your AI income streams</p>
           </div>
 
-          {/* ✅ Real Course Progress */}
-          {userPaid && (
+          {/* ✅ Real Course Progress - COMMENTED OUT */}
+          {/* {userPaid && (
             <div className="bg-[#181e29] rounded-xl p-4 lg:p-6 mb-6 lg:mb-8">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-white font-semibold text-sm lg:text-base">Course Progress</span>
@@ -142,7 +142,7 @@ export default function Courses() {
                 Currently on: Module {currentModule}
               </p>
             </div>
-          )}
+          )} */}
 
           {/* Payment Status */}
           {!userPaid && (
@@ -162,9 +162,13 @@ export default function Courses() {
           {/* ✅ Responsive Modules Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {moduleData.map((module) => {
-              const isCompleted = userPaid && module.id < currentModule
-              const isCurrent = userPaid && module.id === currentModule
-              const isLocked = !userPaid || module.id > currentModule
+              // // Progress tracking logic - COMMENTED OUT
+              // const isCompleted = userPaid && module.id < currentModule
+              // const isCurrent = userPaid && module.id === currentModule
+              // const isLocked = !userPaid || module.id > currentModule
+
+              // Simple logic - just check if user paid
+              const isLocked = !userPaid
 
               return (
                 <div
@@ -172,8 +176,6 @@ export default function Courses() {
                   className={`relative rounded-xl shadow-lg overflow-hidden transition-all duration-300 cursor-pointer hover:scale-105 ${
                     isLocked 
                       ? 'bg-gray-800 opacity-75' 
-                      : isCompleted
-                      ? 'bg-gradient-to-br from-green-900 to-blue-900'
                       : 'bg-gradient-to-br from-blue-900 to-purple-900'
                   }`}
                   onClick={() => handleModuleClick(module)}
@@ -191,15 +193,16 @@ export default function Courses() {
                           e.target.nextSibling.style.display = 'flex'
                         }}
                       />
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center text-xl sm:text-2xl hidden">
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center text-xl sm:text-2xl flex">
                         {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : module.id === 4 ? '🛍️' : module.id === 5 ? '📺' : module.id === 6 ? '🛒' : module.id === 7 ? '📱' : '🧠'}
                       </div>
                       
-                      {/* ✅ Status Indicator */}
+                      {/* ✅ Status Indicator - SIMPLIFIED */}
                       <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm">
-                        {isCompleted && <span className="bg-green-500 w-full h-full rounded-full flex items-center justify-center">✓</span>}
-                        {isCurrent && <span className="bg-blue-500 w-full h-full rounded-full flex items-center justify-center">▶</span>}
+                        {/* {isCompleted && <span className="bg-green-500 w-full h-full rounded-full flex items-center justify-center">✓</span>}
+                        {isCurrent && <span className="bg-blue-500 w-full h-full rounded-full flex items-center justify-center">▶</span>} */}
                         {isLocked && <span className="bg-gray-500 w-full h-full rounded-full flex items-center justify-center">🔒</span>}
+                        {!isLocked && <span className="bg-blue-500 w-full h-full rounded-full flex items-center justify-center">▶</span>}
                       </div>
                     </div>
 
@@ -207,6 +210,7 @@ export default function Courses() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-blue-400 font-bold text-sm lg:text-base">Module {module.id}</span>
                         {isLocked && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">🔒 Locked</span>}
+                        {!isLocked && <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Available</span>}
                       </div>
                       <h3 className="text-white font-bold text-sm lg:text-lg mb-1 line-clamp-2">{module.title}</h3>
                       <p className="text-blue-200 text-xs lg:text-sm mb-2 line-clamp-2">{module.description}</p>
@@ -244,12 +248,10 @@ export default function Courses() {
                       className={`w-full py-2 lg:py-3 rounded-lg font-bold text-center text-sm lg:text-base transition-all ${
                         isLocked 
                           ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                          : isCompleted
-                          ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
                           : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
                       }`}
                     >
-                      {isLocked ? '🔒 Unlock Course First' : isCompleted ? 'Review Module' : isCurrent ? 'Start Learning →' : 'Continue →'}
+                      {isLocked ? '🔒 Unlock Course First' : 'Start Learning →'}
                     </button>
                   </div>
 
@@ -279,13 +281,12 @@ export default function Courses() {
             </div>
           )}
 
-          {/* Progress Summary for Paid Users */}
+          {/* Progress Summary for Paid Users - SIMPLIFIED */}
           {userPaid && (
             <div className="mt-8 lg:mt-16 text-center bg-gradient-to-r from-green-900/50 to-blue-900/50 rounded-xl p-6 lg:p-10">
               <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">Your Learning Journey</h3>
               <p className="text-green-200 text-sm lg:text-base mb-4 lg:mb-6 max-w-2xl mx-auto">
-                You've completed {completedModules} out of {moduleData.length} modules. 
-                {currentModule <= moduleData.length ? ` Next up: ${moduleData[currentModule - 1]?.title}` : ' 🎉 All modules completed!'}
+                You have access to all {moduleData.length} modules! Start with any module you'd like.
               </p>
               <Link href="/">
                 <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all">

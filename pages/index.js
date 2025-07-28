@@ -70,26 +70,13 @@ export default function Home() {
     }
   }
 
-  // Simplified purchase handler - just redirect to checkout
-  async function handlePurchase() {
-    if (!session) {
-      router.push('/auth')
-      return
-    }
-
-    // Get referral code from URL if present, otherwise no referral
-    const { ref } = router.query
-    const referralCode = ref ? ref.toUpperCase() : ''
-
-    // Always use default price - let checkout page handle referral logic
-    const checkoutUrl = `/checkout?referral=${referralCode}`
-    router.push(checkoutUrl)
-  }
-
-  const handlePaymentClick = () => {
+  const handlePurchase = () => {
     if (isAuthenticated) {
-      // User is logged in, go to checkout
-      router.push('/checkout')
+      // User is logged in, go to checkout with referral if present
+      const { ref } = router.query
+      const referralCode = ref ? ref.toUpperCase() : ''
+      const checkoutUrl = `/checkout${referralCode ? `?referral=${referralCode}` : ''}`
+      router.push(checkoutUrl)
     } else {
       // User not logged in, go to auth page
       router.push('/auth')
@@ -260,7 +247,7 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="space-y-3">
               <button
-                onClick={handlePaymentClick}
+                onClick={handlePurchase}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors w-full"
               >
                 {authChecking ? (
@@ -320,7 +307,6 @@ export default function Home() {
                 <div className="order-first lg:order-last">
                   <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
                     <img
-                      key={`carousel-image-${current}`} // ✅ Add key to force re-render
                       src={carouselItems[current].img}
                       alt={carouselItems[current].title}
                       className="w-full h-full rounded-xl shadow-lg object-cover"
@@ -333,7 +319,6 @@ export default function Home() {
                         }
                       }}
                       onLoad={(e) => {
-                        // ✅ Hide fallback when image loads successfully
                         const fallback = e.target.parentElement.querySelector('.fallback-icon')
                         if (fallback) {
                           fallback.style.display = 'none'

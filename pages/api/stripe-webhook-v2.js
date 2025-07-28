@@ -236,15 +236,21 @@ async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
 
     console.log('🔥 Found user:', user.email)
 
+    // Generate referral code if user doesn't have one
+    let userReferralCode = user.referral_code
+    if (!userReferralCode) {
+      userReferralCode = generateReferralCode()
+      console.log('🔥 Generated new referral code for user:', userReferralCode)
+    }
+
     // Update user's payment status
     const { error: updateError } = await supabase
       .from('users')
       .update({
         has_paid: true,
         payment_date: new Date().toISOString(),
-        stripe_payment_intent_id: paymentIntent.id,
-        amount_paid: amount / 100, // Convert from cents
-        currency: paymentIntent.currency
+        referral_code: userReferralCode, // Ensure user has referral code
+        full_name: customerName || user.full_name
       })
       .eq('id', user.id)
 
@@ -254,9 +260,10 @@ async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
 
     console.log('✅ Successfully updated user payment status')
 
-    // Handle referral if provided
+    // ✅ FIXED: Use processReferralCommission instead of handleReferralReward
     if (referralCode && referralCode.trim()) {
-      await handleReferralReward(referralCode, user.id, amount)
+      console.log('🔥 Processing referral commission for code:', referralCode)
+      await processReferralCommission(referralCode, user.id, amount)
     }
 
     return { success: true }
@@ -373,13 +380,15 @@ async function createTransactionRecord(paymentIntentId, userId, amount, sessionO
   }
 }
 
-// Simplified version using only users table:
+// Update the processReferralCommission function:
 
 async function processReferralCommission(referralCode, purchaserUserId, amount) {
   try {
     console.log('🔥 Processing referral commission for code:', referralCode)
+    console.log('🔥 Purchaser user ID:', purchaserUserId)
+    console.log('🔥 Payment amount:', amount)
     
-    // Find the user who owns the referral code
+    // Find the user who owns the referral code (the referrer)
     const { data: referrer, error: referrerError } = await supabase
       .from('users')
       .select('id, full_name, email, referral_code, has_paid, referral_earnings, referral_count')
@@ -388,29 +397,56 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
       .single()
 
     if (referrerError || !referrer) {
-      console.log('❌ Referrer not found or not a paid user')
+      console.log('❌ Referrer not found or not a paid user:', referrerError)
       return
     }
 
     console.log('🔥 Found referrer:', referrer.email)
+    console.log('🔥 Current referrer earnings:', referrer.referral_earnings)
+    console.log('🔥 Current referrer count:', referrer.referral_count)
 
-    // ✅ Calculate new totals
+    // ✅ Calculate new totals with proper handling of null values
     const commissionAmount = 5.00 // $5 per referral
-    const newEarnings = (referrer.referral_earnings || 0) + commissionAmount
-    const newCount = (referrer.referral_count || 0) + 1
+    const currentEarnings = parseFloat(referrer.referral_earnings || 0)
+    const currentCount = parseInt(referrer.referral_count || 0)
+    
+    const newEarnings = currentEarnings + commissionAmount
+    const newCount = currentCount + 1
 
-    // Update referrer's earnings and count
-    const { error: updateError } = await supabase
+    console.log('🔥 Calculated new earnings:', newEarnings)
+    console.log('🔥 Calculated new count:', newCount)
+
+    // ✅ Update referrer's earnings and count
+    const { data: updateData, error: updateError } = await supabase
       .from('users')
       .update({
         referral_earnings: newEarnings,
         referral_count: newCount
       })
       .eq('id', referrer.id)
+      .select() // Return updated data
 
     if (updateError) {
       console.error('❌ Error updating referrer:', updateError)
       return
+    }
+
+    console.log('✅ Referrer update successful:', updateData)
+
+    // ✅ Update the purchaser to track who referred them
+    const { data: purchaserUpdateData, error: purchaserUpdateError } = await supabase
+      .from('users')
+      .update({
+        referred_by: referrer.id, // Track who referred this user
+        referred_by_code: referralCode.toUpperCase() // Track the referral code used
+      })
+      .eq('id', purchaserUserId)
+      .select()
+
+    if (purchaserUpdateError) {
+      console.error('❌ Error updating purchaser referred_by:', purchaserUpdateError)
+    } else {
+      console.log('✅ Purchaser referred_by updated:', purchaserUpdateData)
     }
 
     console.log(`✅ Referral commission processed: $${commissionAmount} for ${referrer.email}`)
@@ -421,50 +457,8 @@ async function processReferralCommission(referralCode, purchaserUserId, amount) 
   }
 }
 
+/*
 async function handleReferralReward(referralCode, newUserId, paymentAmount) {
-  try {
-    console.log('🔥 Processing referral reward for code:', referralCode)
-    
-    // Find the user who owns the referral code
-    const { data: referralOwner, error: referralError } = await supabase
-      .from('users')
-      .select('id, full_name, email, referral_earnings')
-      .eq('referral_code', referralCode.toUpperCase())
-      .eq('has_paid', true)
-      .single()
-
-    if (referralError || !referralOwner) {
-      console.log('❌ Referral code owner not found or not a paid user')
-      return
-    }
-
-    console.log('🔥 Found referral owner:', referralOwner.email)
-
-    // Calculate reward (e.g., 10% of payment)
-    const rewardAmount = Math.round(paymentAmount * 0.1) / 100 // Convert from cents and take 10%
-    const currentEarnings = referralOwner.referral_earnings || 0
-    const newEarnings = currentEarnings + rewardAmount
-
-    // Update referral owner's earnings
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({
-        referral_earnings: newEarnings
-      })
-      .eq('id', referralOwner.id)
-
-    if (updateError) {
-      console.error('❌ Error updating referral earnings:', updateError)
-      return
-    }
-
-    console.log(`✅ Added $${rewardAmount} to ${referralOwner.email}'s referral earnings`)
-
-    // Optionally: Record the referral transaction
-    // You could create a referrals table to track individual referrals
-
-  } catch (error) {
-    console.error('❌ Error processing referral reward:', error)
-    // Don't throw - referral errors shouldn't break payment processing
-  }
+  // This function is no longer used
 }
+*/

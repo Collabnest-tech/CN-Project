@@ -40,74 +40,56 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    if (!stripe || !elements) {
-      return
-    }
-
-    if (!session) {
-      setError('Please log in to continue')
-      return
-    }
-
-    if (!customerInfo.name.trim()) {
-      setError('Please enter your full name')
-      return
-    }
-
     setLoading(true)
     setError('')
 
+    if (!stripe || !elements) {
+      setError('Stripe not loaded')
+      setLoading(false)
+      return
+    }
+
     try {
-      // Create payment intent
+      // Create payment intent with referral code metadata
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: priceId,
-          customerName: customerInfo.name,
-          customerEmail: customerInfo.email,
-          referralCode: referral || ''
+          customerInfo: {
+            email: customerInfo.email,
+            name: customerInfo.name,
+            country: customerInfo.country
+          },
+          referralCode: referral || '', // ✅ This comes from URL or manual input
         }),
       })
 
-      const { client_secret, error: backendError } = await response.json()
+      const { client_secret, error: apiError } = await response.json()
 
-      if (backendError) {
-        setError(backendError)
-        setLoading(false)
-        return
+      if (apiError) {
+        throw new Error(apiError)
       }
 
-      // Confirm payment with Stripe
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+      // Confirm payment
+      const { error: confirmError } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
           card: elements.getElement(CardElement),
           billing_details: {
             name: customerInfo.name,
             email: customerInfo.email,
-            address: {
-              country: customerInfo.country,
-            },
           },
         },
       })
 
-      if (stripeError) {
-        setError(stripeError.message)
-        setLoading(false)
-      } else if (paymentIntent.status === 'succeeded') {
-        // Payment successful
-        console.log('Payment succeeded:', paymentIntent.id)
-        onSuccess(paymentIntent.id)
+      if (confirmError) {
+        throw new Error(confirmError.message)
       }
 
+      onSuccess()
     } catch (err) {
-      console.error('Payment error:', err)
-      setError('Payment processing failed. Please try again.')
+      setError(err.message)
+    } finally {
       setLoading(false)
     }
   }

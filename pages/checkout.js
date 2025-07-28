@@ -258,9 +258,19 @@ export default function Checkout() {
   const [referralChecking, setReferralChecking] = useState(false)
 
   useEffect(() => {
+    // ✅ Debug environment variables
+    console.log('🔍 DEFAULT_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+    console.log('🔍 DISCOUNT_PRICE_ID:', process.env.NEXT_PUBLIC_STRIPE_DISCOUNT_PRICE_ID)
+    
     // Initialize with default price first
-    setSelectedPriceId(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
-    fetchCourseDetails(process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID)
+    const defaultPriceId = process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID
+    
+    if (defaultPriceId) {
+      setSelectedPriceId(defaultPriceId)
+      fetchCourseDetails(defaultPriceId)
+    } else {
+      console.error('❌ NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID is not set!')
+    }
 
     // Then validate referral if provided
     if (referral) {
@@ -269,20 +279,36 @@ export default function Checkout() {
     }
   }, [referral])
 
+  // Update just the fetchCourseDetails function to see what's happening:
+
   const fetchCourseDetails = async (priceId) => {
     try {
+      console.log('🔍 Fetching course details for priceId:', priceId) // ✅ Add this
+      console.log('🔍 Price ID exists?', !!priceId) // ✅ Add this
+      
+      if (!priceId) {
+        console.error('❌ No priceId provided to fetchCourseDetails')
+        return
+      }
+      
       const response = await fetch('/api/get-course-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId }),
       })
       
+      console.log('🔍 Response status:', response.status) // ✅ Add this
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Course details received:', data) // ✅ Add this
         setCourseDetails(data)
+      } else {
+        const errorData = await response.json()
+        console.error('❌ API error response:', errorData) // ✅ Add this
       }
     } catch (error) {
-      console.error('Error fetching course details:', error)
+      console.error('❌ Fetch error:', error)
     }
   }
 

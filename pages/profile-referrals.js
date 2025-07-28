@@ -17,6 +17,19 @@ export default function ProfileReferrals() {
     email: ''
   })
 
+  // ✅ Bank Details State
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountHolder: '',
+    swiftCode: '',
+    accountNumber: '',
+    routingNumber: '',
+    bankAddress: '',
+    currency: ''
+  })
+  const [hasBankDetails, setHasBankDetails] = useState(false)
+  const [updatingBank, setUpdatingBank] = useState(false)
+
   useEffect(() => {
     checkUserAndLoadData()
   }, [])
@@ -30,7 +43,7 @@ export default function ProfileReferrals() {
         return
       }
 
-      // Get user data including referral info
+      // Get user data including referral info and bank details
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -46,6 +59,17 @@ export default function ProfileReferrals() {
           full_name: userData.full_name || '',
           email: userData.email || ''
         })
+
+        // ✅ Load bank details if they exist
+        if (userData.bank_details) {
+          try {
+            const parsedDetails = JSON.parse(userData.bank_details)
+            setBankDetails(parsedDetails)
+            setHasBankDetails(true)
+          } catch (e) {
+            console.error('Error parsing bank details:', e)
+          }
+        }
       }
 
       // Get users referred by this user
@@ -108,6 +132,48 @@ export default function ProfileReferrals() {
       setError('Failed to update profile: ' + error.message)
     } finally {
       setUpdating(false)
+    }
+  }
+
+  // ✅ Bank Details Update Function
+  const handleUpdateBankDetails = async () => {
+    // Validate required fields
+    const requiredFields = ['bankName', 'accountHolder', 'swiftCode', 'accountNumber', 'bankAddress', 'currency']
+    const missingFields = requiredFields.filter(field => !bankDetails[field]?.trim())
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in all required fields: ${missingFields.join(', ')}`)
+      setTimeout(() => setError(''), 5000)
+      return
+    }
+    
+    setUpdatingBank(true)
+    setMessage('')
+    setError('')
+
+    try {
+      // Convert bank details object to JSON string for storage in users table
+      const bankDetailsJson = JSON.stringify({
+        ...bankDetails,
+        updatedAt: new Date().toISOString()
+      })
+      
+      // Save to users table bank_details column
+      const { error } = await supabase
+        .from('users')
+        .update({ bank_details: bankDetailsJson })
+        .eq('id', user.id)
+      
+      if (error) throw error
+      
+      setHasBankDetails(true)
+      setMessage('Bank details saved successfully! 🏦')
+      setTimeout(() => setMessage(''), 3000)
+    } catch (error) {
+      console.error('Error saving bank details:', error)
+      setError('Error saving bank details. Please try again.')
+    } finally {
+      setUpdatingBank(false)
     }
   }
 
@@ -178,7 +244,7 @@ export default function ProfileReferrals() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Account Details */}
           <div className="bg-[#1a2233] rounded-xl p-6">
             <h2 className="text-xl font-bold mb-6">Account Details</h2>
@@ -293,8 +359,169 @@ export default function ProfileReferrals() {
           </div>
         </div>
 
+        {/* ✅ Bank Account Details Section */}
+        <div className="bg-[#1a2233] rounded-xl p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-white">Bank Account Details</h2>
+            {hasBankDetails && (
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                ✓ Saved
+              </span>
+            )}
+          </div>
+          <p className="text-gray-300 text-sm mb-6">
+            Provide your bank details for international wire transfers when withdrawing earnings.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Bank Name */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Bank Name *
+              </label>
+              <input
+                type="text"
+                value={bankDetails.bankName}
+                onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                placeholder="Enter your bank name"
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Account Holder Name */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Account Holder Name *
+              </label>
+              <input
+                type="text"
+                value={bankDetails.accountHolder}
+                onChange={(e) => setBankDetails({...bankDetails, accountHolder: e.target.value})}
+                placeholder="Full name as on bank account"
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* SWIFT/BIC Code */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                SWIFT/BIC Code *
+              </label>
+              <input
+                type="text"
+                value={bankDetails.swiftCode}
+                onChange={(e) => setBankDetails({...bankDetails, swiftCode: e.target.value})}
+                placeholder="e.g. ABCDUS33XXX"
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Account Number/IBAN */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Account Number / IBAN *
+              </label>
+              <input
+                type="text"
+                value={bankDetails.accountNumber}
+                onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                placeholder="Your account number or IBAN"
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Routing Number */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Routing Number
+                <span className="text-gray-500 text-xs ml-1">(US banks only)</span>
+              </label>
+              <input
+                type="text"
+                value={bankDetails.routingNumber}
+                onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
+                placeholder="9-digit routing number"
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Account Currency *
+              </label>
+              <select
+                value={bankDetails.currency}
+                onChange={(e) => setBankDetails({...bankDetails, currency: e.target.value})}
+                className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select currency</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Bank Address - Full Width */}
+          <div className="mt-4">
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Bank Address *
+            </label>
+            <textarea
+              value={bankDetails.bankAddress}
+              onChange={(e) => setBankDetails({...bankDetails, bankAddress: e.target.value})}
+              placeholder="Complete bank address including country"
+              rows="3"
+              className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Security Notice */}
+          <div className="mt-6 p-4 bg-blue-900/30 border border-blue-500/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-blue-400 text-lg">🔒</span>
+              <div>
+                <h4 className="text-blue-300 font-semibold text-sm">Secure & Encrypted</h4>
+                <p className="text-blue-200 text-xs mt-1">
+                  Your banking information is encrypted and stored securely. We only use this for processing your referral earnings withdrawals.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleUpdateBankDetails}
+              disabled={updatingBank}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50"
+            >
+              {updatingBank ? 'Updating...' : 'Save Bank Details'}
+            </button>
+            
+            <button
+              onClick={() => setBankDetails({
+                bankName: '',
+                accountHolder: '',
+                swiftCode: '',
+                accountNumber: '',
+                routingNumber: '',
+                bankAddress: '',
+                currency: ''
+              })}
+              className="px-4 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
         {/* Referred Users */}
-        <div className="mt-8 bg-[#1a2233] rounded-xl p-6">
+        <div className="bg-[#1a2233] rounded-xl p-6">
           <h2 className="text-xl font-bold mb-6">Your Referrals ({referredUsers.length})</h2>
           
           {referredUsers.length === 0 ? (

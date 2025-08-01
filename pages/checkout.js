@@ -239,6 +239,29 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
         )}
       </button>
 
+      {/* ✅ Payment Support Note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="text-lg">📞</span>
+          <h4 className="text-blue-800 font-semibold">Payment Issues?</h4>
+        </div>
+        <p className="text-blue-700 text-sm mb-2">
+          Having trouble with your payment? Contact us directly for immediate assistance:
+        </p>
+        <a 
+          href="https://wa.me/447547131573" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-bold transition-colors"
+        >
+          <span className="text-lg">💬</span>
+          +44 7547 131573
+        </a>
+        <p className="text-blue-600 text-xs mt-1">
+          WhatsApp • Fast response • Available now
+        </p>
+      </div>
+
       <div className="text-center text-sm text-gray-500">
         <p>🔒 Your payment is secured by Stripe's industry-leading encryption</p>
         <p className="mt-1">We never store your card information</p>

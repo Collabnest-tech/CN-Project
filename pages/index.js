@@ -1,12 +1,10 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { moduleData } from '../lib/moduleData'
 import { useSwipeable } from 'react-swipeable'
-import Link from 'next/link'
-import DropdownNavbar from '../components/DropdownNavbar'
-import { useTranslations } from '../lib/translations'
 
 export default function Home() {
   const router = useRouter()
@@ -16,7 +14,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authChecking, setAuthChecking] = useState(true)
-  const { t } = useTranslations()
 
   useEffect(() => {
     checkSession()
@@ -137,74 +134,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 sm:px-6 lg:px-8 py-6 relative">
-      <DropdownNavbar session={session} />
-      
-      {/* Hero Section */}
-      <section className="text-center py-20 px-4">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          {t.home.title}
-        </h1>
-        <h2 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-8">
-          {t.home.subtitle}
-        </h2>
-        <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          {t.home.description}
-        </p>
-        
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-          <Link href="/checkout" className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all">
-            {t.home.getStarted}
-          </Link>
-          <span className="text-2xl font-bold text-green-400">
-            {t.home.price}
-          </span>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-16 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">🤖</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.chatbot}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">✍️</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.content}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">📹</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.video}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">🛒</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.ecommerce}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.data}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">🎵</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.voice}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">🎨</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.design}</h3>
-          </div>
-          
-          <div className="bg-[#1a2233] p-6 rounded-xl">
-            <div className="text-4xl mb-4">⚡</div>
-            <h3 className="text-lg font-semibold mb-2">{t.home.features.automation}</h3>
-          </div>
-        </div>
-      </section>
+      {/* Logo */}
+      <div className="flex justify-center mb-6 lg:mb-8">
+        <Image
+          src="/logo.jpeg"
+          alt="Collab-Nest Logo"
+          width={80}
+          height={80}
+          className="rounded-full shadow-lg sm:w-20 sm:h-20 lg:w-24 lg:h-24"
+        />
+      </div>
 
       <div className="max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl mx-auto">
         

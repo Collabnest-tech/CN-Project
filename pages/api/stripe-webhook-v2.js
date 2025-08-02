@@ -243,54 +243,28 @@ async function handlePaymentIntentSucceeded(paymentIntent, eventId) {
       console.log('🔥 Generated new referral code for user:', userReferralCode)
     }
 
-    // ✅ Get location and currency from Stripe
-    const currency = paymentIntent.currency?.toUpperCase() || 'USD'
-    
-    // Get billing details from the first charge
-    let billingAddress = null
-    let customerCountry = null
-    
-    if (paymentIntent.charges?.data?.length > 0) {
-      const charge = paymentIntent.charges.data[0]
-      billingAddress = charge.billing_details?.address
-      customerCountry = billingAddress?.country
-    }
-
-    console.log('🔥 PAYMENT DETAILS:')
-    console.log('🔥 - Currency:', currency)
-    console.log('🔥 - Customer Country:', customerCountry)
-    console.log('🔥 - Billing Address:', billingAddress)
-
-    // ✅ FIXED: Single update with all data including location/currency
+    // Update user's payment status
     const { error: updateError } = await supabase
       .from('users')
       .update({
         has_paid: true,
         payment_date: new Date().toISOString(),
-        referral_code: userReferralCode,
-        full_name: customerName || user.full_name,
-        // ✅ Add location and currency
-        country: customerCountry,
-        currency: currency,
-        billing_address: billingAddress ? JSON.stringify(billingAddress) : null
+        referral_code: userReferralCode, // Ensure user has referral code
+        full_name: customerName || user.full_name
       })
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('❌ Error updating user:', updateError)
-      throw new Error(`Failed to update user: ${updateError.message}`)
+      throw updateError
     }
 
-    console.log('✅ Successfully updated user with payment status and location info')
+    console.log('✅ Successfully updated user payment status')
 
-    // ✅ Process referral commission if referral code was used
+    // ✅ FIXED: Use processReferralCommission instead of handleReferralReward
     if (referralCode && referralCode.trim()) {
       console.log('🔥 Processing referral commission for code:', referralCode)
       await processReferralCommission(referralCode, user.id, amount)
     }
-
-    // ✅ Create transaction record
-    await createTransactionRecord(paymentIntent.id, user.id, amount, paymentIntent)
 
     return { success: true }
 

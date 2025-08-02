@@ -1,0 +1,352 @@
+import { moduleData } from '../../lib/moduleData'
+
+// Sample quiz questions based on module content
+const quizQuestions = {
+  1: [
+    {
+      question_text: "What are the two main AI tools introduced in Module 1?",
+      option_a: "ChatGPT and MidJourney",
+      option_b: "Jasper and Copy.ai", 
+      option_c: "Canva and InVideo",
+      option_d: "Synthesia and Descript",
+      correct_answer: "A"
+    },
+    {
+      question_text: "What is the estimated earning potential mentioned for AI freelancing?",
+      option_a: "$50-100/month",
+      option_b: "$100-500/month",
+      option_c: "$500-1000/month", 
+      option_d: "$1000-5000/month",
+      correct_answer: "B"
+    },
+    {
+      question_text: "Which platform was mentioned for selling AI-generated designs?",
+      option_a: "Amazon",
+      option_b: "eBay",
+      option_c: "Fiverr",
+      option_d: "Shopify",
+      correct_answer: "C"
+    },
+    {
+      question_text: "How many AI tools are covered in the complete course?",
+      option_a: "15+ tools",
+      option_b: "20+ tools",
+      option_c: "25+ tools",
+      option_d: "30+ tools",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What is the main advantage of using AI for online earning?",
+      option_a: "No skills required",
+      option_b: "Automation and efficiency",
+      option_c: "Guaranteed income",
+      option_d: "No competition",
+      correct_answer: "B"
+    }
+  ],
+  2: [
+    {
+      question_text: "What is the main benefit of content creation mentioned in Module 2?",
+      option_a: "It's easy to do",
+      option_b: "Content is King Online",
+      option_c: "It requires no investment",
+      option_d: "It's automated",
+      correct_answer: "B"
+    },
+    {
+      question_text: "Which tool is mentioned for SEO-optimized content creation?",
+      option_a: "Canva",
+      option_b: "MidJourney", 
+      option_c: "Jasper AI",
+      option_d: "Synthesia",
+      correct_answer: "C"
+    },
+    {
+      question_text: "What type of content can help build brand authority?",
+      option_a: "Random posts",
+      option_b: "SEO-optimized articles",
+      option_c: "Personal photos",
+      option_d: "Product reviews only",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How can content creators monetize their work?",
+      option_a: "Sponsorships only",
+      option_b: "Ads only",
+      option_c: "Sponsorships and brand partnerships",
+      option_d: "Selling products only",
+      correct_answer: "C"
+    },
+    {
+      question_text: "What is Copy.ai primarily used for?",
+      option_a: "Image generation",
+      option_b: "Video editing",
+      option_c: "AI copywriting",
+      option_d: "Social media scheduling",
+      correct_answer: "C"
+    }
+  ],
+  3: [
+    {
+      question_text: "What type of content can Synthesia create?",
+      option_a: "Text articles",
+      option_b: "AI avatar videos",
+      option_c: "Social media graphics",
+      option_d: "Audio podcasts",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What is Descript primarily used for?",
+      option_a: "Creating avatars",
+      option_b: "Writing content",
+      option_c: "Text-based video editing",
+      option_d: "Generating images",
+      correct_answer: "C"
+    },
+    {
+      question_text: "What's the earning potential for freelance video projects?",
+      option_a: "$10-50 per project",
+      option_b: "$20-200 per project",
+      option_c: "$200-500 per project",
+      option_d: "$500-1000 per project",
+      correct_answer: "B"
+    },
+    {
+      question_text: "Which tool helps with professional video editing?",
+      option_a: "InVideo",
+      option_b: "ChatGPT",
+      option_c: "MidJourney",
+      option_d: "Jasper AI",
+      correct_answer: "A"
+    },
+    {
+      question_text: "What makes AI video creation accessible to beginners?",
+      option_a: "No learning required",
+      option_b: "Text-to-video conversion",
+      option_c: "Free tools only",
+      option_d: "Automatic editing",
+      correct_answer: "B"
+    }
+  ],
+  4: [
+    {
+      question_text: "Which platform is recommended for AI-powered e-commerce?",
+      option_a: "WordPress",
+      option_b: "Shopify",
+      option_c: "Wix",
+      option_d: "Squarespace",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What's the monthly earning potential for e-commerce?",
+      option_a: "$100-500/month",
+      option_b: "$500-2000/month",
+      option_c: "$2000-5000/month",
+      option_d: "$5000+/month",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How does AI enhance e-commerce sales?",
+      option_a: "Product recommendations",
+      option_b: "Automated marketing",
+      option_c: "Customer service",
+      option_d: "All of the above",
+      correct_answer: "D"
+    },
+    {
+      question_text: "What advantage does e-commerce offer?",
+      option_a: "Local market only",
+      option_b: "Global market access",
+      option_c: "Limited products",
+      option_d: "High startup costs",
+      correct_answer: "B"
+    },
+    {
+      question_text: "Which AI feature helps with product research?",
+      option_a: "Product Research AI",
+      option_b: "Content AI",
+      option_c: "Video AI",
+      option_d: "Social AI",
+      correct_answer: "A"
+    }
+  ],
+  5: [
+    {
+      question_text: "Which tool is mentioned for social media scheduling?",
+      option_a: "Buffer",
+      option_b: "Canva",
+      option_c: "ChatGPT",
+      option_d: "InVideo",
+      correct_answer: "A"
+    },
+    {
+      question_text: "What's the earning potential for social media management?",
+      option_a: "$50-200/month",
+      option_b: "$200-1000/month",
+      option_c: "$1000-2000/month",
+      option_d: "$2000+/month",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What does Predis AI specialize in?",
+      option_a: "Video editing",
+      option_b: "Social media content",
+      option_c: "Email marketing",
+      option_d: "SEO optimization",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How does AI improve social media management?",
+      option_a: "Smart scheduling",
+      option_b: "Analytics insights",
+      option_c: "Content automation",
+      option_d: "All of the above",
+      correct_answer: "D"
+    },
+    {
+      question_text: "Which platform offers comprehensive social media management?",
+      option_a: "Hootsuite",
+      option_b: "InVideo",
+      option_c: "Synthesia",
+      option_d: "Jasper AI",
+      correct_answer: "A"
+    }
+  ],
+  6: [
+    {
+      question_text: "What is the earning range mentioned for content writing services?",
+      option_a: "$5-20",
+      option_b: "$20-100",
+      option_c: "$100-200",
+      option_d: "$200-500",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How much can graphic design projects earn?",
+      option_a: "$10-50",
+      option_b: "$30-150",
+      option_c: "$150-300",
+      option_d: "$300-500",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What's the project earning range for freelancing?",
+      option_a: "$25-250/project",
+      option_b: "$50-500/project",
+      option_c: "$100-1000/project",
+      option_d: "$200-2000/project",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How does AI help freelancers scale their business?",
+      option_a: "Automation tools",
+      option_b: "Faster delivery",
+      option_c: "Better quality",
+      option_d: "All of the above",
+      correct_answer: "D"
+    },
+    {
+      question_text: "What type of AI tools help with project management?",
+      option_a: "Writing tools only",
+      option_b: "Design tools only",
+      option_c: "Project Management AI",
+      option_d: "Video tools only",
+      correct_answer: "C"
+    }
+  ],
+  7: [
+    {
+      question_text: "What is the hourly rate mentioned for online tutoring?",
+      option_a: "$10-50/hour",
+      option_b: "$20-100/hour",
+      option_c: "$50-150/hour",
+      option_d: "$100-200/hour",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What advantage does online tutoring offer?",
+      option_a: "Local students only",
+      option_b: "Global student access",
+      option_c: "Limited subjects",
+      option_d: "Fixed schedules",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How does AI enhance the learning experience?",
+      option_a: "Personalized content",
+      option_b: "Automated grading",
+      option_c: "Interactive lessons",
+      option_d: "All of the above",
+      correct_answer: "D"
+    },
+    {
+      question_text: "What makes online tutoring a scalable business?",
+      option_a: "One-on-one only",
+      option_b: "Group sessions and courses",
+      option_c: "Limited hours",
+      option_d: "Single subject focus",
+      correct_answer: "B"
+    },
+    {
+      question_text: "Which AI tools help with course creation?",
+      option_a: "Course Creation AI",
+      option_b: "Video AI",
+      option_c: "Content AI",
+      option_d: "All of the above",
+      correct_answer: "D"
+    }
+  ],
+  8: [
+    {
+      question_text: "What type of business model is affiliate marketing?",
+      option_a: "Active income",
+      option_b: "Passive income",
+      option_c: "Freelance work",
+      option_d: "Product sales",
+      correct_answer: "B"
+    },
+    {
+      question_text: "What's the monthly earning potential for affiliate marketing?",
+      option_a: "$100-1000/month",
+      option_b: "$500-3000/month",
+      option_c: "$1000-5000/month",
+      option_d: "$3000+/month",
+      correct_answer: "B"
+    },
+    {
+      question_text: "How does AI improve affiliate marketing results?",
+      option_a: "Better analytics",
+      option_b: "Content optimization",
+      option_c: "Audience targeting",
+      option_d: "All of the above",
+      correct_answer: "D"
+    },
+    {
+      question_text: "What advantage does affiliate marketing offer?",
+      option_a: "Global opportunities",
+      option_b: "Local market only",
+      option_c: "Limited products",
+      option_d: "High startup costs",
+      correct_answer: "A"
+    },
+    {
+      question_text: "Which AI tools help optimize affiliate campaigns?",
+      option_a: "Analytics AI",
+      option_b: "Content AI",
+      option_c: "Tracking AI",
+      option_d: "All of the above",
+      correct_answer: "D"
+    }
+  ]
+}
+
+export default function handler(req, res) {
+  const { moduleId } = req.query
+  
+  if (!moduleId || !quizQuestions[moduleId]) {
+    return res.status(404).json({ error: 'Questions not found' })
+  }
+  
+  res.status(200).json(quizQuestions[moduleId])
+}
+

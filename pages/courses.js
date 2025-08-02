@@ -193,9 +193,6 @@ export default function Courses() {
                           e.target.nextSibling.style.display = 'flex'
                         }}
                       />
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center text-xl sm:text-2xl flex">
-                        {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : module.id === 4 ? '🛍️' : module.id === 5 ? '📺' : module.id === 6 ? '🛒' : module.id === 7 ? '📱' : '🧠'}
-                      </div>
                       
                       {/* ✅ Status Indicator - SIMPLIFIED */}
                       <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm">

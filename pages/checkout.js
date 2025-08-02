@@ -239,7 +239,7 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
         )}
       </button>
 
-      {/* ✅ Payment Support Note */}
+      {/* ✅ Enhanced Payment Support Note */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <span className="text-lg">📞</span>
@@ -257,7 +257,19 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
           <span className="text-lg">💬</span>
           +44 7547 131573
         </a>
-        <p className="text-blue-600 text-xs mt-1">
+        
+        {/* ✅ JazzCash/EasyPaisa Notice */}
+        <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-purple-50 border border-orange-200 rounded-lg">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <span className="text-lg">🇵🇰</span>
+            <span className="text-orange-800 font-semibold text-sm">Pakistani Customers</span>
+          </div>
+          <p className="text-orange-700 text-xs">
+            For <strong>JazzCash</strong> & <strong>EasyPaisa</strong> payments, contact the same number above
+          </p>
+        </div>
+        
+        <p className="text-blue-600 text-xs mt-2">
           WhatsApp • Fast response • Available now
         </p>
       </div>

@@ -113,7 +113,7 @@ export function UrduProvider({ children }) {
     "Total Earnings": "کل آمدنی",
     "How It Works": "یہ کیسے کام کرتا ہے",
     "Share your referral link with friends": "دوستوں کے ساتھ اپنا ریفرل لنک شیئر کریں",
-    "They get $5 OFF their purchase": "انہیں اپنی خریداری پر $5 کی چھوٹ ملتی ہے",
+    "They get $5 off their purchase": "انہیں اپنی خریداری پر $5 کی چھوٹ ملتی ہے",
     "You earn $5 for each successful referral": "آپ ہر کامیاب ریفرل کے لیے $5 کماتے ہیں",
     "Recent Referral Activity": "حالیہ ریفرل سرگرمی",
     "No referral activity yet": "ابھی تک کوئی ریفرل سرگرمی نہیں",
@@ -287,6 +287,10 @@ export function UrduProvider({ children }) {
     "Email": "ای میل",
     "Date": "تاریخ",
     "Earnings": "آمدنی",
+    "Successful Referrals": "کامیاب ریفرل",
+    "They get $5 off their purchase": "انہیں اپنی خریداری پر $5 کی چھوٹ ملتی ہے",
+    "Earnings are tracked automatically": "آمدنی خودکار طور پر ٹریک ہوتی ہے",
+    "Status": "حالت",
     "Per Referral": "فی ریفرل",
 
     // Course page missing translations
@@ -318,7 +322,18 @@ export function UrduProvider({ children }) {
     "Zapier": "Zapier",
     "Make": "Make",
     "Back to Home": "ہوم واپس جائیں",
-    "Multiple AI APIs": "متعدد AI APIs"
+    "Multiple AI APIs": "متعدد AI APIs",
+
+    // Additional Course page translations
+    "Course Locked": "کورس بند ہے",
+    "Unlock Course": "کورس کھولیں",
+    "Locked": "بند",
+    "Unlock Course First": "پہلے کورس کھولیں",
+    "Ready to Start?": "شروع کرنے کے لیے تیار؟",
+    "Get instant access to all modules and start your AI journey today!": "تمام ماڈیولز تک فوری رسائی حاصل کریں اور آج ہی اپنا AI سفر شروع کریں!",
+    "Get Started": "شروع کریں",
+    "Your Learning Journey": "آپ کا سیکھنے کا سفر",
+    "more": "مزید"
   }
 
   const t = (text) => {

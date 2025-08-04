@@ -317,6 +317,7 @@ export function UrduProvider({ children }) {
     "Canva AI": "Canva AI",
     "Zapier": "Zapier",
     "Make": "Make",
+    "Back to Home": "ہوم واپس جائیں",
     "Multiple AI APIs": "متعدد AI APIs"
   }
 

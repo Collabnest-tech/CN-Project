@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import Head from 'next/head'
+import { useUrdu } from '../components/UrduTranslate'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
@@ -18,6 +19,8 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
     email: '',
     country: 'GB'
   })
+
+  const { t } = useUrdu()
 
   useEffect(() => {
     // Get user session and pre-fill email
@@ -145,7 +148,7 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name *
+            {t("Full Name")} *
           </label>
           <input
             type="text"
@@ -155,14 +158,14 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
               name: e.target.value
             }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your full name"
+            placeholder={t("Enter your full name")}
             required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
+            {t("Email Address")}
           </label>
           <input
             type="email"
@@ -171,13 +174,13 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
             disabled
           />
           <p className="text-sm text-gray-500 mt-1">
-            This is your account email and cannot be changed
+            {t("This is your account email and cannot be changed")}
           </p>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Country
+            {t("Country")}
           </label>
           <select
             value={customerInfo.country}
@@ -187,20 +190,20 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
             }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="GB">United Kingdom</option>
-            <option value="US">United States</option>
-            <option value="CA">Canada</option>
-            <option value="AU">Australia</option>
-            <option value="UAE">United Arab Emirates</option>
-            <option value="PK">Pakistan</option>
-            <option value="IT">Italy</option>
-            <option value="ES">Spain</option>
-            <option value="NL">Netherlands</option>
-            <option value="BE">Belgium</option>
-            <option value="SE">Sweden</option>
-            <option value="NO">Norway</option>
-            <option value="DK">Denmark</option>
-            <option value="FI">Finland</option>
+            <option value="GB">{t("United Kingdom")}</option>
+            <option value="US">{t("United States")}</option>
+            <option value="CA">{t("Canada")}</option>
+            <option value="AU">{t("Australia")}</option>
+            <option value="UAE">{t("United Arab Emirates")}</option>
+            <option value="PK">{t("Pakistan")}</option>
+            <option value="IT">{t("Italy")}</option>
+            <option value="ES">{t("Spain")}</option>
+            <option value="NL">{t("Netherlands")}</option>
+            <option value="BE">{t("Belgium")}</option>
+            <option value="SE">{t("Sweden")}</option>
+            <option value="NO">{t("Norway")}</option>
+            <option value="DK">{t("Denmark")}</option>
+            <option value="FI">{t("Finland")}</option>
           </select>
         </div>
       </div>
@@ -208,13 +211,13 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
       {/* Card Element */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Information *
+          {t("Card Information")} *
         </label>
         <div className="border border-gray-300 rounded-lg p-4 bg-white">
           <CardElement options={cardElementOptions} />
         </div>
         <p className="text-sm text-gray-500 mt-1">
-          Your payment information is secure and encrypted
+          {t("Your payment information is secure and encrypted")}
         </p>
       </div>
 
@@ -232,10 +235,10 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
         {loading ? (
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-            Processing Payment...
+            {t("Processing Payment...")}
           </div>
         ) : (
-          `Complete Payment - ${courseDetails ? `${courseDetails.currency.toUpperCase()} ${(courseDetails.unit_amount / 100).toFixed(2)}` : 'Loading...'}`
+          `${t("Complete Payment")} - ${courseDetails ? `${courseDetails.currency.toUpperCase()} ${(courseDetails.unit_amount / 100).toFixed(2)}` : 'Loading...'}`
         )}
       </button>
 
@@ -243,10 +246,10 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <span className="text-lg">📞</span>
-          <h4 className="text-blue-800 font-semibold">Payment Issues?</h4>
+          <h4 className="text-blue-800 font-semibold">{t("Payment Issues?")}</h4>
         </div>
         <p className="text-blue-700 text-sm mb-2">
-          Having trouble with your payment? Contact us directly for immediate assistance:
+          {t("Having trouble with your payment? Contact us directly for immediate assistance:")}
         </p>
         <a 
           href="https://wa.me/447547131573" 
@@ -262,21 +265,21 @@ const CheckoutForm = ({ priceId, referral, courseDetails, onSuccess }) => {
         <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-purple-50 border border-orange-200 rounded-lg">
           <div className="flex items-center justify-center gap-2 mb-1">
             <span className="text-lg">🇵🇰</span>
-            <span className="text-orange-800 font-semibold text-sm">Pakistani Customers</span>
+            <span className="text-orange-800 font-semibold text-sm">{t("Pakistani Customers")}</span>
           </div>
           <p className="text-orange-700 text-xs">
-            For <strong>JazzCash</strong> & <strong>EasyPaisa</strong> payments, contact the same number above
+            {t("For")} <strong>JazzCash</strong> & <strong>EasyPaisa</strong> {t("payments, contact the same number above")}
           </p>
         </div>
         
         <p className="text-blue-600 text-xs mt-2">
-          WhatsApp • Fast response • Available now
+          {t("WhatsApp • Fast response • Available now")}
         </p>
       </div>
 
       <div className="text-center text-sm text-gray-500">
-        <p>🔒 Your payment is secured by Stripe's industry-leading encryption</p>
-        <p className="mt-1">We never store your card information</p>
+        <p>{t("Your payment is secured by Stripe's industry-leading encryption")}</p>
+        <p className="mt-1">{t("We never store your card information")}</p>
       </div>
     </form>
   )
@@ -291,6 +294,8 @@ export default function Checkout() {
   const [selectedPriceId, setSelectedPriceId] = useState(null)
   const [referralInput, setReferralInput] = useState(referral || '')
   const [referralChecking, setReferralChecking] = useState(false)
+
+  const { t } = useUrdu()
 
   useEffect(() => {
     // Initialize with default price first
@@ -388,7 +393,7 @@ export default function Checkout() {
       <div className="max-w-2xl mx-auto px-4">
         {/* Order Summary */}
         <div className="bg-gray-50 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+          <h2 className="text-xl font-semibold mb-4">{t("Order Summary")}</h2>
           <div className="flex justify-between items-center">
             <span>AI Marketing Mastery Course</span>
             <span className="font-semibold">
@@ -397,20 +402,20 @@ export default function Checkout() {
           </div>
           {referralValid && (
             <div className="mt-2 text-green-600 text-sm">
-              ✅ Referral discount applied - You saved $5!
+              ✅ {t("Referral discount applied - You saved $5!")}
             </div>
           )}
         </div>
 
         {/* ✅ Referral Code Section */}
         <div className="bg-white rounded-lg p-6 mb-8 border">
-          <h3 className="text-lg font-semibold mb-4">Have a Referral Code?</h3>
+          <h3 className="text-lg font-semibold mb-4">{t("Have a Referral Code?")}</h3>
           <div className="flex gap-3">
             <input
               type="text"
               value={referralInput}
               onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-              placeholder="Enter referral code"
+              placeholder={t("Enter referral code")}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={10}
             />
@@ -419,7 +424,7 @@ export default function Checkout() {
               disabled={referralChecking}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {referralChecking ? 'Checking...' : 'Apply'}
+              {referralChecking ? t("Checking...") : t("Apply")}
             </button>
           </div>
           
@@ -427,20 +432,20 @@ export default function Checkout() {
           {referralValid === true && (
             <div className="mt-3 p-3 bg-green-100 border border-green-400 rounded-lg">
               <p className="text-green-800 text-sm">
-                🎉 Valid referral code applied! You saved $5!
+                🎉 {t("Valid referral code applied! You saved $5!")}
               </p>
             </div>
           )}
           {referralValid === false && (
             <div className="mt-3 p-3 bg-red-100 border border-red-400 rounded-lg">
               <p className="text-red-800 text-sm">
-                ❌ Invalid referral code. Please check and try again.
+                ❌ {t("Invalid referral code. Please check and try again.")}
               </p>
             </div>
           )}
           
           <p className="text-sm text-gray-500 mt-2">
-            Enter a valid referral code to save $5 on your purchase!
+            {t("Enter a valid referral code to save $5 on your purchase!")}
           </p>
         </div>
 

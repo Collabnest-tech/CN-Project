@@ -1,10 +1,13 @@
 // pages/login.js
+import { useUrdu } from '../components/UrduTranslate'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 
 export default function Login() {
+  const { t } = useUrdu()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,8 +39,6 @@ export default function Login() {
 
         if (userError && userError.code === 'PGRST116') {
           // User doesn't exist in custom table, create entry
-          const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase()
-          
           const { error: insertError } = await supabase
             .from('users')
             .insert({
@@ -45,7 +46,7 @@ export default function Login() {
               email: data.user.email,
               full_name: data.user.user_metadata?.full_name || '',
               has_paid: false,
-              referral_code: referralCode,
+              referral_code: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -57,9 +58,10 @@ export default function Login() {
 
         router.push('/')
       }
+
     } catch (error) {
-      console.error('Login error:', error)
-      setError(error.message || 'An error occurred during login')
+      console.error('Sign in error:', error)
+      setError(error.message || 'An error occurred during sign in')
     } finally {
       setLoading(false)
     }
@@ -78,8 +80,8 @@ export default function Login() {
               height={60}
               className="rounded-full shadow-lg mx-auto mb-4"
             />
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-blue-200 text-sm sm:text-base">Sign in to continue your AI journey</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t("Welcome Back")}</h1>
+            <p className="text-blue-200 text-sm sm:text-base">{t("Sign in to your account")}</p>
           </div>
 
           {/* Error Message */}
@@ -92,7 +94,7 @@ export default function Login() {
           {/* Login Form */}
           <form onSubmit={handleSignIn} className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Email Address</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Email")}</label>
               <input
                 type="email"
                 value={email}
@@ -104,7 +106,7 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Password</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Password")}</label>
               <input
                 type="password"
                 value={password}
@@ -121,32 +123,21 @@ export default function Login() {
               className={`w-full py-2 sm:py-3 rounded-lg font-bold text-base sm:text-lg transition-all ${
                 loading 
                   ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
               }`}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? t("Loading...") : t("Sign In")}
             </button>
           </form>
 
           {/* Register Link */}
           <div className="text-center mt-6">
             <p className="text-blue-200 text-sm">
-              Don't have an account?{' '}
-              <a href="/register" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Create Account
-              </a>
+              {t("Don't have an account?")}{' '}
+              <Link href="/register">
+                <a className="text-blue-400 hover:text-blue-300 font-semibold">{t("Sign up")}</a>
+              </Link>
             </p>
-          </div>
-
-          {/* Quick Info */}
-          <div className="mt-6 sm:mt-8 p-4 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg">
-            <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">Start earning with AI:</h3>
-            <ul className="text-blue-200 text-xs sm:text-sm space-y-1">
-              <li>🤖 ChatGPT monetization strategies</li>
-              <li>🎨 MidJourney art & design profits</li>
-              <li>📹 AI video content creation</li>
-              <li>💰 Multiple income streams</li>
-            </ul>
           </div>
         </div>
       </div>

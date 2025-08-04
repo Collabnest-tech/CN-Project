@@ -4,6 +4,7 @@ import { moduleData } from '../lib/moduleData'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
+import { useUrdu } from '../components/UrduTranslate'
 
 export default function Courses() {
   const router = useRouter()
@@ -11,6 +12,7 @@ export default function Courses() {
   const [userPaid, setUserPaid] = useState(false)
   const [loading, setLoading] = useState(true)
   // const [currentModule, setCurrentModule] = useState(1)
+  const { t } = useUrdu()
 
   useEffect(() => {
     checkUserSession()
@@ -98,7 +100,7 @@ export default function Courses() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">{t("Loading...")}</div>
       </div>
     )
   }
@@ -121,8 +123,8 @@ export default function Courses() {
               height={60}
               className="rounded-full shadow-lg mx-auto mb-4 sm:w-16 sm:h-16 lg:w-20 lg:h-20"
             />
-            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 lg:mb-4">AI for Making Money Online</h1>
-            <p className="text-blue-200 text-sm lg:text-xl max-w-3xl mx-auto">Master 8 modules to build your AI income streams</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 lg:mb-4">{t("AI for Making Money Online")}</h1>
+            <p className="text-blue-200 text-sm lg:text-xl max-w-3xl mx-auto">{t("Master 8 modules to build your AI income streams")}</p>
           </div>
 
           {/* ✅ Real Course Progress - COMMENTED OUT */}
@@ -147,13 +149,13 @@ export default function Courses() {
           {/* Payment Status */}
           {!userPaid && (
             <div className="bg-gradient-to-r from-red-900 to-orange-900 rounded-xl p-4 lg:p-6 mb-6 lg:mb-8 text-center">
-              <h3 className="text-lg lg:text-xl font-bold text-white mb-2">🔒 Course Locked</h3>
+              <h3 className="text-lg lg:text-xl font-bold text-white mb-2">🔒 {t("Course Locked")}</h3>
               <p className="text-orange-200 text-sm lg:text-base mb-3">
-                Complete your purchase to unlock all 8 modules and start building your AI income streams.
+                {t("Complete your purchase to unlock all 8 modules and start building your AI income streams.")}
               </p>
               <Link href="/checkout">
                 <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 lg:px-8 py-2 lg:py-3 rounded-lg font-bold text-sm lg:text-base transition-all">
-                  Unlock Course - $25
+                  {t("Unlock Course - $25")}
                 </a>
               </Link>
             </div>
@@ -205,9 +207,9 @@ export default function Courses() {
 
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-blue-400 font-bold text-sm lg:text-base">Module {module.id}</span>
-                        {isLocked && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">🔒 Locked</span>}
-                        {!isLocked && <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Available</span>}
+                        <span className="text-blue-400 font-bold text-sm lg:text-base">{t("Module")} {module.id}</span>
+                        {isLocked && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">🔒 {t("Locked")}</span>}
+                        {!isLocked && <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">{t("Available")}</span>}
                       </div>
                       <h3 className="text-white font-bold text-sm lg:text-lg mb-1 line-clamp-2">{module.title}</h3>
                       <p className="text-blue-200 text-xs lg:text-sm mb-2 line-clamp-2">{module.description}</p>
@@ -248,7 +250,7 @@ export default function Courses() {
                           : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
                       }`}
                     >
-                      {isLocked ? '🔒 Unlock Course First' : 'Start Learning →'}
+                      {isLocked ? '🔒 ' + t("Unlock Course First") : t("Start Learning →")}
                     </button>
                   </div>
 
@@ -266,13 +268,13 @@ export default function Courses() {
           {/* Bottom CTA */}
           {!userPaid && (
             <div className="mt-8 lg:mt-16 text-center bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-10">
-              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">Ready to Start?</h3>
+              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">{t("Ready to Start?")}</h3>
               <p className="text-green-200 text-sm lg:text-base mb-4 lg:mb-6 max-w-2xl mx-auto">
-                Get instant access to all 8 modules and start building your AI income streams today!
+                {t("Get instant access to all 8 modules and start building your AI income streams today!")}
               </p>
               <Link href="/checkout">
                 <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all">
-                  Get Started - $15
+                  {t("Get Started - $15")}
                 </a>
               </Link>
             </div>
@@ -281,13 +283,13 @@ export default function Courses() {
           {/* Progress Summary for Paid Users - SIMPLIFIED */}
           {userPaid && (
             <div className="mt-8 lg:mt-16 text-center bg-gradient-to-r from-green-900/50 to-blue-900/50 rounded-xl p-6 lg:p-10">
-              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">Your Learning Journey</h3>
+              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">{t("Your Learning Journey")}</h3>
               <p className="text-green-200 text-sm lg:text-base mb-4 lg:mb-6 max-w-2xl mx-auto">
-                You have access to all {moduleData.length} modules! Start with any module you'd like.
+                {t("You have access to all")} {moduleData.length} {t("modules! Start with any module you'd like.")}
               </p>
               <Link href="/">
                 <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all">
-                  Back to Home
+                  {t("Back to Home")}
                 </a>
               </Link>
             </div>

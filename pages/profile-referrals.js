@@ -3,9 +3,11 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useUrdu } from '../components/UrduTranslate'
 
 export default function ProfileReferrals() {
   const router = useRouter()
+  const { t } = useUrdu()
   const [user, setUser] = useState(null)
   const [referredUsers, setReferredUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -204,10 +206,10 @@ export default function ProfileReferrals() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Profile & Referrals</h1>
+          <h1 className="text-3xl font-bold">{t("Profile & Referrals")}</h1>
           <Link href="/courses">
             <a className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
-              Back to Courses
+              {t("Back to Courses")}
             </a>
           </Link>
         </div>
@@ -230,29 +232,29 @@ export default function ProfileReferrals() {
             <div className="text-3xl font-bold text-green-400 mb-2">
               ${(user?.referral_earnings || 0).toFixed(2)}
             </div>
-            <div className="text-green-200">Total Earnings</div>
+            <div className="text-green-200">{t("Total Earnings")}</div>
           </div>
           <div className="bg-blue-900 rounded-xl p-6 text-center">
             <div className="text-3xl font-bold text-blue-400 mb-2">
               {user?.referral_count || 0}
             </div>
-            <div className="text-blue-200">Successful Referrals</div>
+            <div className="text-blue-200">{t("Successful Referrals")}</div>
           </div>
           <div className="bg-purple-900 rounded-xl p-6 text-center">
             <div className="text-3xl font-bold text-purple-400 mb-2">$5</div>
-            <div className="text-purple-200">Per Referral</div>
+            <div className="text-purple-200">{t("Per Referral")}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Account Details */}
           <div className="bg-[#1a2233] rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">Account Details</h2>
+            <h2 className="text-xl font-bold mb-6">{t("Account Details")}</h2>
             
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Full Name
+                  {t("Full Name")}
                 </label>
                 <input
                   type="text"
@@ -260,13 +262,13 @@ export default function ProfileReferrals() {
                   value={formData.full_name}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-                  placeholder="Enter your full name"
+                  placeholder={t("Enter your full name")}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email Address
+                  {t("Email Address")}
                 </label>
                 <input
                   type="email"
@@ -276,7 +278,7 @@ export default function ProfileReferrals() {
                   className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Email cannot be changed. Contact support if needed.
+                  {t("Email cannot be changed. Contact support if needed.")}
                 </p>
               </div>
 
@@ -285,7 +287,7 @@ export default function ProfileReferrals() {
                 disabled={updating}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
-                {updating ? 'Updating...' : 'Update Profile'}
+                {updating ? t("Updating...") : t("Update Profile")}
               </button>
             </form>
 
@@ -295,20 +297,20 @@ export default function ProfileReferrals() {
                 onClick={handleSignOut}
                 className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
-                Sign Out
+                {t("Sign Out")}
               </button>
             </div>
           </div>
 
           {/* Referral Program */}
           <div className="bg-[#1a2233] rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">Referral Program</h2>
+            <h2 className="text-xl font-bold mb-6">{t("Referral Program")}</h2>
             
             {/* Referral Code */}
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Your Referral Code
+                  {t("Your Referral Code")}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -321,13 +323,13 @@ export default function ProfileReferrals() {
                     onClick={copyReferralCode}
                     className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-colors whitespace-nowrap"
                   >
-                    Copy Link
+                    {t("Copy Link")}
                   </button>
                 </div>
               </div>
 
               <div className="bg-purple-900 rounded-lg p-4">
-                <h3 className="font-bold text-purple-200 mb-2">Your Referral Link:</h3>
+                <h3 className="font-bold text-purple-200 mb-2">{t("Your Referral Link")}:</h3>
                 <code className="text-xs text-purple-300 break-all">
                   https://www.collab-nest.com?ref={user?.referral_code || 'LOADING'}
                 </code>
@@ -336,23 +338,23 @@ export default function ProfileReferrals() {
 
             {/* How It Works */}
             <div className="space-y-3">
-              <h3 className="font-bold text-gray-200">How It Works:</h3>
+              <h3 className="font-bold text-gray-200">{t("How It Works")}:</h3>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">•</span>
-                  Share your referral link with friends
+                  {t("Share your referral link with friends")}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-blue-400">•</span>
-                  They get $5 off their purchase
+                  {t("They get $5 off their purchase")}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-400">•</span>
-                  You earn $5 for each successful referral
+                  {t("You earn $5 for each successful referral")}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-yellow-400">•</span>
-                  Earnings are tracked automatically
+                  {t("Earnings are tracked automatically")}
                 </li>
               </ul>
             </div>
@@ -362,28 +364,28 @@ export default function ProfileReferrals() {
         {/* ✅ Bank Account Details Section */}
         <div className="bg-[#1a2233] rounded-xl p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Bank Account Details</h2>
+            <h2 className="text-xl font-bold text-white">{t("Bank Account Details")}</h2>
             {hasBankDetails && (
               <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
-                ✓ Saved
+                ✓ {t("Saved")}
               </span>
             )}
           </div>
           <p className="text-gray-300 text-sm mb-6">
-            Provide your bank details for international wire transfers when withdrawing earnings.
+            {t("Provide your bank details for international wire transfers when withdrawing earnings.")}
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bank Name */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Bank Name *
+                {t("Bank Name")} *
               </label>
               <input
                 type="text"
                 value={bankDetails.bankName}
                 onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                placeholder="Enter your bank name"
+                placeholder={t("Enter your bank name")}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -391,13 +393,13 @@ export default function ProfileReferrals() {
             {/* Account Holder Name */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Account Holder Name *
+                {t("Account Holder Name")} *
               </label>
               <input
                 type="text"
                 value={bankDetails.accountHolder}
                 onChange={(e) => setBankDetails({...bankDetails, accountHolder: e.target.value})}
-                placeholder="Full name as on bank account"
+                placeholder={t("Full name as on bank account")}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -405,13 +407,13 @@ export default function ProfileReferrals() {
             {/* SWIFT/BIC Code */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                SWIFT/BIC Code *
+                {t("SWIFT/BIC Code")} *
               </label>
               <input
                 type="text"
                 value={bankDetails.swiftCode}
                 onChange={(e) => setBankDetails({...bankDetails, swiftCode: e.target.value})}
-                placeholder="e.g. ABCDUS33XXX"
+                placeholder={t("e.g. ABCDUS33XXX")}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -419,13 +421,13 @@ export default function ProfileReferrals() {
             {/* Account Number/IBAN */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Account Number / IBAN *
+                {t("Account Number / IBAN")} *
               </label>
               <input
                 type="text"
                 value={bankDetails.accountNumber}
                 onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                placeholder="Your account number or IBAN"
+                placeholder={t("Your account number or IBAN")}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -433,14 +435,14 @@ export default function ProfileReferrals() {
             {/* Routing Number */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Routing Number
-                <span className="text-gray-500 text-xs ml-1">(US banks only)</span>
+                {t("Routing Number")}
+                <span className="text-gray-500 text-xs ml-1">({t("US banks only")})</span>
               </label>
               <input
                 type="text"
                 value={bankDetails.routingNumber}
                 onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
-                placeholder="9-digit routing number"
+                placeholder={t("9-digit routing number")}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -448,20 +450,20 @@ export default function ProfileReferrals() {
             {/* Currency */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Account Currency *
+                {t("Account Currency")} *
               </label>
               <select
                 value={bankDetails.currency}
                 onChange={(e) => setBankDetails({...bankDetails, currency: e.target.value})}
                 className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Select currency</option>
-                <option value="USD">USD - US Dollar</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="CAD">CAD - Canadian Dollar</option>
-                <option value="AUD">AUD - Australian Dollar</option>
-                <option value="OTHER">Other</option>
+                <option value="">{t("Select currency")}</option>
+                <option value="USD">{t("USD - US Dollar")}</option>
+                <option value="EUR">{t("EUR - Euro")}</option>
+                <option value="GBP">{t("GBP - British Pound")}</option>
+                <option value="CAD">{t("CAD - Canadian Dollar")}</option>
+                <option value="AUD">{t("AUD - Australian Dollar")}</option>
+                <option value="OTHER">{t("Other")}</option>
               </select>
             </div>
           </div>
@@ -469,12 +471,12 @@ export default function ProfileReferrals() {
           {/* Bank Address - Full Width */}
           <div className="mt-4">
             <label className="block text-gray-300 text-sm font-medium mb-2">
-              Bank Address *
+              {t("Bank Address")} *
             </label>
             <textarea
               value={bankDetails.bankAddress}
               onChange={(e) => setBankDetails({...bankDetails, bankAddress: e.target.value})}
-              placeholder="Complete bank address including country"
+              placeholder={t("Complete bank address including country")}
               rows="3"
               className="w-full px-4 py-3 bg-[#0f1419] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -485,9 +487,9 @@ export default function ProfileReferrals() {
             <div className="flex items-start gap-3">
               <span className="text-blue-400 text-lg">🔒</span>
               <div>
-                <h4 className="text-blue-300 font-semibold text-sm">Secure & Encrypted</h4>
+                <h4 className="text-blue-300 font-semibold text-sm">{t("Secure & Encrypted")}</h4>
                 <p className="text-blue-200 text-xs mt-1">
-                  Your banking information is encrypted and stored securely. We only use this for processing your referral earnings withdrawals.
+                  {t("Your banking information is encrypted and stored securely. We only use this for processing your referral earnings withdrawals.")}
                 </p>
               </div>
             </div>
@@ -500,7 +502,7 @@ export default function ProfileReferrals() {
               disabled={updatingBank}
               className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50"
             >
-              {updatingBank ? 'Updating...' : 'Save Bank Details'}
+              {updatingBank ? t("Updating...") : t("Save Bank Details")}
             </button>
             
             <button
@@ -515,20 +517,20 @@ export default function ProfileReferrals() {
               })}
               className="px-4 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-300"
             >
-              Clear
+              {t("Clear")}
             </button>
           </div>
         </div>
 
         {/* Referred Users */}
         <div className="bg-[#1a2233] rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-6">Your Referrals ({referredUsers.length})</h2>
+          <h2 className="text-xl font-bold mb-6">{t("Your Referrals")} ({referredUsers.length})</h2>
           
           {referredUsers.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-400 mb-4">No referrals yet</div>
+              <div className="text-gray-400 mb-4">{t("No referrals yet")}</div>
               <p className="text-sm text-gray-500">
-                Start sharing your referral link to earn money!
+                {t("Start sharing your referral link to earn money!")}
               </p>
             </div>
           ) : (
@@ -536,17 +538,17 @@ export default function ProfileReferrals() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="text-left py-3">Name</th>
-                    <th className="text-left py-3">Email</th>
-                    <th className="text-left py-3">Date</th>
-                    <th className="text-left py-3">Earnings</th>
+                    <th className="text-left py-3">{t("Name")}</th>
+                    <th className="text-left py-3">{t("Email")}</th>
+                    <th className="text-left py-3">{t("Date")}</th>
+                    <th className="text-left py-3">{t("Earnings")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {referredUsers.map((referral, index) => (
                     <tr key={referral.id} className="border-b border-gray-700">
                       <td className="py-3">
-                        {referral.full_name || 'Anonymous'}
+                        {referral.full_name || t("Anonymous")}
                       </td>
                       <td className="py-3 text-gray-300">
                         {referral.email}

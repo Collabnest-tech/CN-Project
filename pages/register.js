@@ -1,9 +1,11 @@
+import { useUrdu } from '../components/UrduTranslate'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 
 export default function Register() {
+  const { t } = useUrdu()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -17,7 +19,7 @@ export default function Register() {
     e.preventDefault()
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t("Passwords don't match"))
       return
     }
 
@@ -64,7 +66,7 @@ export default function Register() {
           console.error('Error inserting user data:', insertError)
         }
 
-        setMessage('Registration successful! Please check your email to verify your account.')
+        setMessage(t('Registration successful! Please check your email to verify your account.'))
         
         setTimeout(() => {
           router.push('/login')
@@ -92,8 +94,8 @@ export default function Register() {
               height={60}
               className="rounded-full shadow-lg mx-auto mb-4"
             />
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-blue-200 text-sm sm:text-base">Join thousands learning AI for income</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t("Create Account")}</h1>
+            <p className="text-blue-200 text-sm sm:text-base">{t("Join thousands learning AI for income")}</p>
           </div>
 
           {/* Error/Success Messages */}
@@ -112,7 +114,7 @@ export default function Register() {
           {/* Registration Form */}
           <form onSubmit={handleSignUp} className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Full Name")}</label>
               <input
                 type="text"
                 value={fullName}
@@ -124,7 +126,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Email Address</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Email Address")}</label>
               <input
                 type="email"
                 value={email}
@@ -136,7 +138,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Password</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Password")}</label>
               <input
                 type="password"
                 value={password}
@@ -149,7 +151,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-blue-200 text-sm font-medium mb-2">Confirm Password</label>
+              <label className="block text-blue-200 text-sm font-medium mb-2">{t("Confirm Password")}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -170,28 +172,28 @@ export default function Register() {
                   : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
               }`}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? t("Creating Account") + '...' : t("Create Account")}
             </button>
           </form>
 
           {/* Login Link */}
           <div className="text-center mt-6">
             <p className="text-blue-200 text-sm">
-              Already have an account?{' '}
+              {t("Already have an account?")}{' '}
               <a href="/login" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Sign In
+                {t("Sign In")}
               </a>
             </p>
           </div>
 
           {/* Benefits */}
           <div className="mt-6 sm:mt-8 p-4 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg">
-            <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">What you get:</h3>
+            <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">{t("What you get:")}</h3>
             <ul className="text-blue-200 text-xs sm:text-sm space-y-1">
-              <li>✓ Access to 8 comprehensive AI modules</li>
-              <li>✓ Lifetime course access</li>
-              <li>✓ Referral program - earn $5 per referral</li>
-              <li>✓ Real income-generating strategies</li>
+              <li>✓ {t("Access to 8 comprehensive AI modules")}</li>
+              <li>✓ {t("Lifetime course access")}</li>
+              <li>✓ {t("Referral program - earn $5 per referral")}</li>
+              <li>✓ {t("Real income-generating strategies")}</li>
             </ul>
           </div>
         </div>

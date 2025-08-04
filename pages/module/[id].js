@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react'
 import { moduleData } from '../../lib/moduleData'
 import Link from 'next/link'
 import Quiz from '../../components/Quiz'
+import { useUrdu } from '../../components/UrduTranslate'
 
 export default function ModulePage() {
+  const { t } = useUrdu()
   const router = useRouter()
   const { id } = router.query
   const [module, setModule] = useState(null)
@@ -73,7 +75,7 @@ export default function ModulePage() {
   if (!module) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] flex items-center justify-center">
-        <div className="text-white text-xl">Loading module...</div>
+        <div className="text-white text-xl">{t("Loading module...")}</div>
       </div>
     )
   }
@@ -86,7 +88,7 @@ export default function ModulePage() {
             onClick={() => setShowQuiz(false)}
             className="text-blue-400 hover:text-blue-300 mb-4 flex items-center text-sm"
           >
-            ← Back to Module
+            ← {t("Back to Module")}
           </button>
           <Quiz 
             moduleId={module.id} 
@@ -105,7 +107,7 @@ export default function ModulePage() {
         {/* Back Button */}
         <Link href="/courses">
           <a className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-4 text-sm">
-            ← Back to Courses
+            ← {t("Back to Courses")}
           </a>
         </Link>
 
@@ -113,11 +115,11 @@ export default function ModulePage() {
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 mb-6">
           <div className="text-center">
             <div className="text-3xl mb-2">📚</div>
-            <h1 className="text-xl font-bold text-white mb-2">Module {module.id}: {module.title}</h1>
-            <p className="text-blue-200 text-sm mb-3">{module.description}</p>
+            <h1 className="text-xl font-bold text-white mb-2">{t("Module")} {module.id}: {t(module.title)}</h1>
+            <p className="text-blue-200 text-sm mb-3">{t(module.description)}</p>
             <div className="flex justify-center gap-4 text-xs text-blue-200">
-              <span>⏱️ {module.duration}</span>
-              <span>💰 {module.earnings}</span>
+              <span>⏱️ {t(module.duration)}</span>
+              <span>💰 {t(module.earnings)}</span>
             </div>
           </div>
         </div>
@@ -125,11 +127,11 @@ export default function ModulePage() {
         {/* Video Player */}
         <div className="bg-[#181e29] rounded-xl overflow-hidden mb-6">
           <div className="p-3 bg-[#232a39] flex justify-between items-center">
-            <h3 className="text-base font-semibold text-white">Module Video</h3>
+            <h3 className="text-base font-semibold text-white">{t("Module Video")}</h3>
             <button
               onClick={toggleFullscreen}
               className="text-blue-400 hover:text-blue-300 transition-colors px-2 py-1 rounded-md text-sm"
-              title="Toggle Fullscreen"
+              title={t("Toggle Fullscreen")}
             >
               {isFullscreen ? '🗗' : '⛶'}
             </button>
@@ -142,8 +144,8 @@ export default function ModulePage() {
               <div className="absolute inset-0 z-10 bg-black bg-opacity-90 flex items-center justify-center">
                 <div className="text-center text-white p-8">
                   <div className="text-6xl mb-4">📱↻</div>
-                  <h2 className="text-2xl font-bold mb-4">Rotate Your Device</h2>
-                  <p className="text-lg mb-4">Please rotate your phone to landscape mode for the best viewing experience.</p>
+                  <h2 className="text-2xl font-bold mb-4">{t("Rotate Your Device")}</h2>
+                  <p className="text-lg mb-4">{t("Please rotate your phone to landscape mode for the best viewing experience.")}</p>
                   <div className="text-4xl animate-pulse">↻</div>
                 </div>
               </div>
@@ -168,7 +170,7 @@ export default function ModulePage() {
               }}
             >
               <source src={`/modules/Mod${module.id}.mp4`} type="video/mp4" />
-              Your browser does not support the video tag.
+              {t("Your browser does not support the video tag.")}
             </video>
           </div>
         </div>
@@ -184,17 +186,17 @@ export default function ModulePage() {
             }`}
             disabled={!videoEnded}
           >
-            {videoEnded ? '🎯 Take Module Quiz' : '📹 Complete Video to Unlock Quiz'}
+            {videoEnded ? `🎯 ${t("Take Module Quiz")}` : `📹 ${t("Complete Video to Unlock Quiz")}`}
           </button>
         </div>
 
         {/* Tools Section */}
         <div className="bg-[#181e29] rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-bold text-white mb-3">Tools Covered</h2>
+          <h2 className="text-lg font-bold text-white mb-3">{t("Tools Covered")}</h2>
           <div className="flex flex-wrap gap-2">
             {module.tools.map((tool, idx) => (
               <span key={idx} className="px-2 py-1 bg-blue-600 bg-opacity-50 text-blue-100 rounded-full text-xs">
-                {tool}
+                {t(tool)}
               </span>
             ))}
           </div>
@@ -205,7 +207,7 @@ export default function ModulePage() {
           {module.id > 1 && (
             <Link href={`/module/${module.id - 1}`}>
               <a className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all text-center text-sm">
-                ← Previous
+                ← {t("Previous")}
               </a>
             </Link>
           )}
@@ -213,7 +215,7 @@ export default function ModulePage() {
           {module.id < 8 && (
             <Link href={`/module/${module.id + 1}`}>
               <a className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition-all text-center text-sm">
-                Next →
+                {t("Next")} →
               </a>
             </Link>
           )}

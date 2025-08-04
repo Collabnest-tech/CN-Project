@@ -333,7 +333,272 @@ export function UrduProvider({ children }) {
     "Get instant access to all modules and start your AI journey today!": "تمام ماڈیولز تک فوری رسائی حاصل کریں اور آج ہی اپنا AI سفر شروع کریں!",
     "Get Started": "شروع کریں",
     "Your Learning Journey": "آپ کا سیکھنے کا سفر",
-    "more": "مزید"
+    "more": "مزید",
+
+    // Quiz component translations
+    "Quiz": "کوئز",
+    "Question": "سوال",
+    "of": "میں سے",
+    "Next": "اگلا",
+    "Submit Quiz": "کوئز جمع کریں",
+    "Quiz Complete!": "کوئز مکمل!",
+    "Your Score": "آپ کا اسکور",
+    "Correct": "درست",
+    "Incorrect": "غلط",
+    "Try Again": "دوبارہ کوشش کریں",
+    "Continue to Next Module": "اگلے ماڈیول پر جائیں",
+    "Well done! You can now proceed to the next module.": "شاباش! اب آپ اگلے ماڈیول پر جا سکتے ہیں۔",
+    "Don't worry, you can retake the quiz to improve your score.": "پریشان نہ ہوں، آپ اپنا اسکور بہتر بنانے کے لیے کوئز دوبارہ لے سکتے ہیں۔",
+    "Loading quiz...": "کوئز لوڈ ہو رہا ہے...",
+    "Error loading quiz questions": "کوئز کے سوالات لوڈ کرنے میں خرابی",
+
+    // Module 1 Questions
+    "What are the two main AI tools introduced in Module 1?": "ماڈیول 1 میں متعارف کرائے گئے دو اہم AI ٹولز کیا ہیں؟",
+    "ChatGPT and MidJourney": "ChatGPT اور MidJourney",
+    "Jasper and Copy.ai": "Jasper اور Copy.ai",
+    "Canva and InVideo": "Canva اور InVideo",
+    "Synthesia and Descript": "Synthesia اور Descript",
+
+    "What is the estimated earning potential mentioned for AI freelancing?": "AI فری لانسنگ کے لیے مذکور متوقع آمدنی کی صلاحیت کیا ہے؟",
+    "$50-100/month": "ماہانہ $50-100",
+    "$100-500/month": "ماہانہ $100-500",
+    "$500-1000/month": "ماہانہ $500-1000",
+    "$1000-5000/month": "ماہانہ $1000-5000",
+
+    "Which platform was mentioned for selling AI-generated designs?": "AI سے بنے ڈیزائن بیچنے کے لیے کون سا پلیٹ فارم بتایا گیا؟",
+    "Amazon": "Amazon",
+    "eBay": "eBay",
+    "Fiverr": "Fiverr",
+    "Shopify": "Shopify",
+
+    "How many AI tools are covered in the complete course?": "مکمل کورس میں کتنے AI ٹولز شامل ہیں؟",
+    "15+ tools": "15+ ٹولز",
+    "20+ tools": "20+ ٹولز",
+    "25+ tools": "25+ ٹولز",
+    "30+ tools": "30+ ٹولز",
+
+    "What is the main advantage of using AI for online earning?": "آن لائن کمانے کے لیے AI استعمال کرنے کا اہم فائدہ کیا ہے؟",
+    "No skills required": "کوئی مہارت درکار نہیں",
+    "Automation and efficiency": "خودکاری اور کارکردگی",
+    "Guaranteed income": "مضمون آمدنی",
+    "No competition": "کوئی مقابلہ نہیں",
+
+    // Module 2 Questions
+    "What is the main benefit of content creation mentioned in Module 2?": "ماڈیول 2 میں مذکور مواد تخلیق کا اہم فائدہ کیا ہے؟",
+    "It's easy to do": "یہ آسان ہے",
+    "Content is King Online": "آن لائن مواد بادشاہ ہے",
+    "It requires no investment": "اس میں سرمایہ کاری کی ضرورت نہیں",
+    "It's automated": "یہ خودکار ہے",
+
+    "Which tool is mentioned for SEO-optimized content creation?": "SEO کے لیے بہتر مواد بنانے کے لیے کون سا ٹول بتایا گیا؟",
+    "Canva": "Canva",
+    "MidJourney": "MidJourney",
+    "Jasper AI": "Jasper AI",
+    "Synthesia": "Synthesia",
+
+    "What type of content can help build brand authority?": "کون سا مواد برانڈ کی اتھارٹی بنانے میں مدد کر سکتا ہے؟",
+    "Random posts": "بے ترتیب پوسٹس",
+    "SEO-optimized articles": "SEO کے لیے بہتر مضامین",
+    "Personal photos": "ذاتی تصاویر",
+    "Product reviews only": "صرف پروڈکٹ ریویوز",
+
+    "How can content creators monetize their work?": "مواد بنانے والے اپنے کام کو کیسے منیٹائز کر سکتے ہیں؟",
+    "Sponsorships only": "صرف اسپانسرشپ",
+    "Ads only": "صرف اشتہارات",
+    "Sponsorships and brand partnerships": "اسپانسرشپ اور برانڈ پارٹنرشپ",
+    "Selling products only": "صرف پروڈکٹس بیچنا",
+
+    "What is Copy.ai primarily used for?": "Copy.ai بنیادی طور پر کس کے لیے استعمال ہوتا ہے؟",
+    "Image generation": "تصاویر بنانا",
+    "Video editing": "ویڈیو ایڈٹنگ",
+    "AI copywriting": "AI کاپی رائٹنگ",
+    "Social media scheduling": "سوشل میڈیا شیڈولنگ",
+
+    // Module 3 Questions
+    "What type of content can Synthesia create?": "Synthesia کون سا مواد بنا سکتا ہے؟",
+    "Text articles": "متنی مضامین",
+    "AI avatar videos": "AI اوتار ویڈیوز",
+    "Social media graphics": "سوشل میڈیا گرافکس",
+    "Audio podcasts": "آڈیو پوڈکاسٹس",
+
+    "What is Descript primarily used for?": "Descript بنیادی طور پر کس کے لیے استعمال ہوتا ہے؟",
+    "Creating avatars": "اوتار بنانا",
+    "Writing content": "مواد لکھنا",
+    "Text-based video editing": "متن پر مبنی ویڈیو ایڈٹنگ",
+    "Generating images": "تصاویر بنانا",
+
+    "What's the earning potential for freelance video projects?": "فری لانس ویڈیو پروجیکٹس کی آمدنی کی صلاحیت کیا ہے؟",
+    "$10-50 per project": "فی پروجیکٹ $10-50",
+    "$20-200 per project": "فی پروجیکٹ $20-200",
+    "$200-500 per project": "فی پروجیکٹ $200-500",
+    "$500-1000 per project": "فی پروجیکٹ $500-1000",
+
+    "Which tool helps with professional video editing?": "کون سا ٹول پیشہ ورانہ ویڈیو ایڈٹنگ میں مدد کرتا ہے؟",
+    "InVideo": "InVideo",
+    "ChatGPT": "ChatGPT",
+    "MidJourney": "MidJourney",
+    "Jasper AI": "Jasper AI",
+
+    "What makes AI video creation accessible to beginners?": "AI ویڈیو بنانا ابتدائی افراد کے لیے کیا آسان بناتا ہے؟",
+    "No learning required": "سیکھنے کی ضرورت نہیں",
+    "Text-to-video conversion": "متن سے ویڈیو میں تبدیلی",
+    "Free tools only": "صرف مفت ٹولز",
+    "Automatic editing": "خودکار ایڈٹنگ",
+
+    // Module 4 Questions
+    "Which platform is recommended for AI-powered e-commerce?": "AI سے چلنے والی ای کامرس کے لیے کون سا پلیٹ فارم تجویز ہے؟",
+    "WordPress": "WordPress",
+    "Shopify": "Shopify",
+    "Wix": "Wix",
+    "Squarespace": "Squarespace",
+
+    "What's the monthly earning potential for e-commerce?": "ای کامرس کی ماہانہ آمدنی کی صلاحیت کیا ہے؟",
+    "$100-500/month": "ماہانہ $100-500",
+    "$500-2000/month": "ماہانہ $500-2000",
+    "$2000-5000/month": "ماہانہ $2000-5000",
+    "$5000+/month": "ماہانہ $5000+",
+
+    "How does AI enhance e-commerce sales?": "AI ای کامرس کی فروخت کو کیسے بہتر بناتا ہے؟",
+    "Product recommendations": "پروڈکٹ کی سفارشات",
+    "Automated marketing": "خودکار مارکیٹنگ",
+    "Customer service": "کسٹمر سروس",
+    "All of the above": "اوپر کے تمام",
+
+    "What advantage does e-commerce offer?": "ای کامرس کیا فائدہ فراہم کرتا ہے؟",
+    "Local market only": "صرف مقامی مارکیٹ",
+    "Global market access": "عالمی مارکیٹ تک رسائی",
+    "Limited products": "محدود پروڈکٹس",
+    "High startup costs": "زیادہ ابتدائی لاگت",
+
+    "Which AI feature helps with product research?": "کون سی AI خصوصیت پروڈکٹ ریسرچ میں مدد کرتی ہے؟",
+    "Product Research AI": "پروڈکٹ ریسرچ AI",
+    "Content AI": "Content AI",
+    "Video AI": "Video AI",
+    "Social AI": "Social AI",
+
+    // Module 5 Questions
+    "Which tool is mentioned for social media scheduling?": "سوشل میڈیا شیڈولنگ کے لیے کون سا ٹول بتایا گیا؟",
+    "Buffer": "Buffer",
+    "Canva": "Canva",
+    "ChatGPT": "ChatGPT",
+    "InVideo": "InVideo",
+
+    "What's the earning potential for social media management?": "سوشل میڈیا منیجمنٹ کی آمدنی کی صلاحیت کیا ہے؟",
+    "$50-200/month": "ماہانہ $50-200",
+    "$200-1000/month": "ماہانہ $200-1000",
+    "$1000-2000/month": "ماہانہ $1000-2000",
+    "$2000+/month": "ماہانہ $2000+",
+
+    "What does Predis AI specialize in?": "Predis AI کس میں مہارت رکھتا ہے؟",
+    "Video editing": "ویڈیو ایڈٹنگ",
+    "Social media content": "سوشل میڈیا مواد",
+    "Email marketing": "ای میل مارکیٹنگ",
+    "SEO optimization": "SEO بہتری",
+
+    "How does AI improve social media management?": "AI سوشل میڈیا منیجمنٹ کو کیسے بہتر بناتا ہے؟",
+    "Smart scheduling": "ہوشمند شیڈولنگ",
+    "Analytics insights": "تجزیاتی بصیرت",
+    "Content automation": "مواد کی خودکاری",
+    "All of the above": "اوپر کے تمام",
+
+    "Which platform offers comprehensive social media management?": "کون سا پلیٹ فارم جامع سوشل میڈیا منیجمنٹ فراہم کرتا ہے؟",
+    "Hootsuite": "Hootsuite",
+    "InVideo": "InVideo",
+    "Synthesia": "Synthesia",
+    "Jasper AI": "Jasper AI",
+
+    // Module 6 Questions
+    "What is the earning range mentioned for content writing services?": "مواد لکھنے کی خدمات کے لیے مذکور آمدنی کی رینج کیا ہے؟",
+    "$5-20": "$5-20",
+    "$20-100": "$20-100",
+    "$100-200": "$100-200",
+    "$200-500": "$200-500",
+
+    "How much can graphic design projects earn?": "گرافک ڈیزائن کے پروجیکٹس کتنا کما سکتے ہیں؟",
+    "$10-50": "$10-50",
+    "$30-150": "$30-150",
+    "$150-300": "$150-300",
+    "$300-500": "$300-500",
+
+    "What's the project earning range for freelancing?": "فری لانسنگ کے لیے پروجیکٹ کی آمدنی کی رینج کیا ہے؟",
+    "$25-250/project": "فی پروجیکٹ $25-250",
+    "$50-500/project": "فی پروجیکٹ $50-500",
+    "$100-1000/project": "فی پروجیکٹ $100-1000",
+    "$200-2000/project": "فی پروجیکٹ $200-2000",
+
+    "How does AI help freelancers scale their business?": "AI فری لانسرز کو اپنا کاروبار بڑھانے میں کیسے مدد کرتا ہے؟",
+    "Automation tools": "خودکاری کے ٹولز",
+    "Faster delivery": "تیز ڈیلیوری",
+    "Better quality": "بہتر معیار",
+    "All of the above": "اوپر کے تمام",
+
+    "What type of AI tools help with project management?": "کون سے AI ٹولز پروجیکٹ منیجمنٹ میں مدد کرتے ہیں؟",
+    "Writing tools only": "صرف لکھنے کے ٹولز",
+    "Design tools only": "صرف ڈیزائن کے ٹولز",
+    "Project Management AI": "پروجیکٹ منیجمنٹ AI",
+    "Video tools only": "صرف ویڈیو ٹولز",
+
+    // Module 7 Questions
+    "What is the hourly rate mentioned for online tutoring?": "آن لائن ٹیوٹرنگ کے لیے مذکور فی گھنٹہ ریٹ کیا ہے؟",
+    "$10-50/hour": "فی گھنٹہ $10-50",
+    "$20-100/hour": "فی گھنٹہ $20-100",
+    "$50-150/hour": "فی گھنٹہ $50-150",
+    "$100-200/hour": "فی گھنٹہ $100-200",
+
+    "What advantage does online tutoring offer?": "آن لائن ٹیوٹرنگ کیا فائدہ فراہم کرتا ہے؟",
+    "Local students only": "صرف مقامی طلباء",
+    "Global student access": "عالمی طلباء تک رسائی",
+    "Limited subjects": "محدود مضامین",
+    "Fixed schedules": "مقرر وقت",
+
+    "How does AI enhance the learning experience?": "AI سیکھنے کے تجربے کو کیسے بہتر بناتا ہے؟",
+    "Personalized content": "ذاتی مواد",
+    "Automated grading": "خودکار گریڈنگ",
+    "Interactive lessons": "انٹرایکٹو اسباق",
+    "All of the above": "اوپر کے تمام",
+
+    "What makes online tutoring a scalable business?": "آن لائن ٹیوٹرنگ کو ایک قابل توسیع کاروبار کیا بناتا ہے؟",
+    "One-on-one only": "صرف ایک پر ایک",
+    "Group sessions and courses": "گروپ سیشن اور کورسز",
+    "Limited hours": "محدود گھنٹے",
+    "Single subject focus": "ایک مضمون پر توجہ",
+
+    "Which AI tools help with course creation?": "کون سے AI ٹولز کورس بنانے میں مدد کرتے ہیں؟",
+    "Course Creation AI": "کورس کریشن AI",
+    "Video AI": "Video AI",
+    "Content AI": "Content AI",
+    "All of the above": "اوپر کے تمام",
+
+    // Module 8 Questions
+    "What type of business model is affiliate marketing?": "ایفلیٹ مارکیٹنگ کیا قسم کا کاروباری ماڈل ہے؟",
+    "Active income": "فعال آمدنی",
+    "Passive income": "غیر فعال آمدنی",
+    "Freelance work": "فری لانس کام",
+    "Product sales": "پروڈکٹ کی فروخت",
+
+    "What's the monthly earning potential for affiliate marketing?": "ایفلیٹ مارکیٹنگ کی ماہانہ آمدنی کی صلاحیت کیا ہے؟",
+    "$100-1000/month": "ماہانہ $100-1000",
+    "$500-3000/month": "ماہانہ $500-3000",
+    "$1000-5000/month": "ماہانہ $1000-5000",
+    "$3000+/month": "ماہانہ $3000+",
+
+    "How does AI improve affiliate marketing results?": "AI ایفلیٹ مارکیٹنگ کے نتائج کو کیسے بہتر بناتا ہے؟",
+    "Better analytics": "بہتر تجزیات",
+    "Content optimization": "مواد کی بہتری",
+    "Audience targeting": "سامعین کو نشانہ بنانا",
+    "All of the above": "اوپر کے تمام",
+
+    "What advantage does affiliate marketing offer?": "ایفلیٹ مارکیٹنگ کیا فائدہ فراہم کرتا ہے؟",
+    "Global opportunities": "عالمی مواقع",
+    "Local market only": "صرف مقامی مارکیٹ",
+    "Limited products": "محدود پروڈکٹس",
+    "High startup costs": "زیادہ ابتدائی لاگت",
+
+    "Which AI tools help optimize affiliate campaigns?": "کون سے AI ٹولز ایفلیٹ مہمات کو بہتر بنانے میں مدد کرتے ہیں؟",
+    "Analytics AI": "Analytics AI",
+    "Content AI": "Content AI",
+    "Tracking AI": "Tracking AI",
+    "All of the above": "اوپر کے تمام"
   }
 
   const t = (text) => {

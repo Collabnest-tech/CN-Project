@@ -1,99 +1,50 @@
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { moduleData } from '../lib/moduleData'
-import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useUrdu } from '../components/UrduTranslate'
 
 export default function Courses() {
-  const router = useRouter()
+  const { t } = useUrdu()
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
   const [loading, setLoading] = useState(true)
-  // const [currentModule, setCurrentModule] = useState(1)
-  const { t } = useUrdu()
+  const router = useRouter()
 
   useEffect(() => {
-    checkUserSession()
+    checkSession()
   }, [])
 
-  async function checkUserSession() {
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session) {
-      router.push('/login')
-      return
-    }
-    
-    setSession(session)
-    
-    if (session) {
-      // Check if user has paid
-      const { data, error } = await supabase
-        .from('users')
-        .select('has_paid')
-        .eq('id', session.user.id)
-        .single()
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      setSession(session)
       
-      if (!error && data) {
-        setUserPaid(data.has_paid)
-        
-        // // If user has paid, get their progress
-        // if (data.has_paid) {
-        //   await fetchUserProgress(session.user.id)
-        // }
+      if (session) {
+        await checkPaymentStatus(session.user.id)
       }
+    } catch (error) {
+      console.error('Error checking session:', error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  // async function fetchUserProgress(userId) {
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from('user_progress')
-  //       .select('module_id')
-  //       .eq('user_id', userId)
-  //       .single()
-
-  //     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-  //       throw error
-  //     }
-
-  //     // Set current module (default to 1 if no progress found)
-  //     setCurrentModule(data?.module_id || 1)
-  //   } catch (error) {
-  //     console.error('Error fetching progress:', error)
-  //     setCurrentModule(1) // Default to first module
-  //   }
-  // }
-
-  const handleModuleClick = async (module) => {
-    if (!userPaid) {
-      router.push('/checkout')
-      return
-    }
-
+  const checkPaymentStatus = async (userId) => {
     try {
-      // // Only allow access to current module or completed modules
-      // if (module.id > currentModule) {
-      //   alert('Complete the previous modules first!')
-      //   return
-      // }
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('has_paid')
+        .eq('id', userId)
+        .single()
 
-      // // Update last accessed time
-      // await supabase
-      //   .from('user_progress')
-      //   .upsert({
-      //     user_id: session.user.id,
-      //     module_id: currentModule,
-      //     last_accessed: new Date().toISOString(),
-      //   })
-
-      // Navigate to module content
-      router.push(`/module/${module.id}`)
+      if (!error && user?.has_paid) {
+        setUserPaid(true)
+      }
     } catch (error) {
-      console.error('Error accessing module:', error)
+      console.error('Error checking payment status:', error)
     }
   }
 
@@ -105,195 +56,141 @@ export default function Courses() {
     )
   }
 
-  // const completedModules = currentModule - 1
-  // const progressPercentage = (completedModules / moduleData.length) * 100
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white">
-      {/* ✅ Responsive Container */}
-      <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
-        <div className="max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto">
-          
-          {/* Header */}
-          <div className="text-center mb-6 lg:mb-12">
-            <Image
-              src="/logo.jpeg"
-              alt="Collab-Nest Logo"
-              width={60}
-              height={60}
-              className="rounded-full shadow-lg mx-auto mb-4 sm:w-16 sm:h-16 lg:w-20 lg:h-20"
-            />
-            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 lg:mb-4">{t("AI for Making Money Online")}</h1>
-            <p className="text-blue-200 text-sm lg:text-xl max-w-3xl mx-auto">{t("Master 8 modules to build your AI income streams")}</p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] text-white px-4 sm:px-6 lg:px-8 py-6">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8 lg:mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            {t("AI for Making Money Online")}
+          </h1>
+          <p className="text-blue-200 text-lg lg:text-xl max-w-3xl mx-auto">
+            {t("Master 8 modules to build your AI income streams")}
+          </p>
+        </div>
 
-          {/* ✅ Real Course Progress - COMMENTED OUT */}
-          {/* {userPaid && (
-            <div className="bg-[#181e29] rounded-xl p-4 lg:p-6 mb-6 lg:mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-semibold text-sm lg:text-base">Course Progress</span>
-                <span className="text-blue-400 text-sm lg:text-base">{completedModules}/{moduleData.length} Modules</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2 lg:h-3">
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-blue-500 h-2 lg:h-3 rounded-full transition-all duration-500" 
-                  style={{ width: `${progressPercentage}%` }}
-                ></div>
-              </div>
-              <p className="text-gray-400 text-xs lg:text-sm mt-2">
-                Currently on: Module {currentModule}
-              </p>
-            </div>
-          )} */}
-
-          {/* Payment Status */}
-          {!userPaid && (
-            <div className="bg-gradient-to-r from-red-900 to-orange-900 rounded-xl p-4 lg:p-6 mb-6 lg:mb-8 text-center">
-              <h3 className="text-lg lg:text-xl font-bold text-white mb-2">🔒 {t("Course Locked")}</h3>
-              <p className="text-orange-200 text-sm lg:text-base mb-3">
-                {t("Complete your purchase to unlock all 8 modules and start building your AI income streams.")}
-              </p>
-              <Link href="/checkout">
-                <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 lg:px-8 py-2 lg:py-3 rounded-lg font-bold text-sm lg:text-base transition-all">
-                  {t("Unlock Course - $25")}
-                </a>
-              </Link>
-            </div>
-          )}
-
-          {/* ✅ Responsive Modules Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {moduleData.map((module) => {
-              // // Progress tracking logic - COMMENTED OUT
-              // const isCompleted = userPaid && module.id < currentModule
-              // const isCurrent = userPaid && module.id === currentModule
-              // const isLocked = !userPaid || module.id > currentModule
-
-              // Simple logic - just check if user paid
-              const isLocked = !userPaid
-
-              return (
-                <div
-                  key={module.id}
-                  className={`relative rounded-xl shadow-lg overflow-hidden transition-all duration-300 cursor-pointer hover:scale-105 ${
-                    isLocked 
-                      ? 'bg-gray-800 opacity-75' 
-                      : 'bg-gradient-to-br from-blue-900 to-purple-900'
-                  }`}
-                  onClick={() => handleModuleClick(module)}
-                >
-                  {/* Module Header */}
-                  <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-6">
-                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 flex-shrink-0">
-                      <Image
-                        src={module.thumbnail}
-                        alt={module.title}
-                        fill
-                        className="rounded-lg object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none'
-                          e.target.nextSibling.style.display = 'flex'
-                        }}
-                      />
-                      
-                      {/* ✅ Status Indicator - SIMPLIFIED */}
-                      <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm">
-                        {/* {isCompleted && <span className="bg-green-500 w-full h-full rounded-full flex items-center justify-center">✓</span>}
-                        {isCurrent && <span className="bg-blue-500 w-full h-full rounded-full flex items-center justify-center">▶</span>} */}
-                        {isLocked && <span className="bg-gray-500 w-full h-full rounded-full flex items-center justify-center">🔒</span>}
-                        {!isLocked && <span className="bg-blue-500 w-full h-full rounded-full flex items-center justify-center">▶</span>}
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-blue-400 font-bold text-sm lg:text-base">{t("Module")} {module.id}</span>
-                        {isLocked && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">🔒 {t("Locked")}</span>}
-                        {!isLocked && <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">{t("Available")}</span>}
-                      </div>
-                      <h3 className="text-white font-bold text-sm lg:text-lg mb-1 line-clamp-2">{module.title}</h3>
-                      <p className="text-blue-200 text-xs lg:text-sm mb-2 line-clamp-2">{module.description}</p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs lg:text-sm text-gray-300">
-                          <span>⏱️ {module.duration}</span>
-                        </div>
-                        <div className="text-green-400 text-xs lg:text-sm font-semibold">
-                          💰 {module.earnings}
-                        </div>
-                      </div>
-                    </div>
+        {/* Course Modules Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+          {moduleData.map((module) => (
+            <div
+              key={module.id}
+              className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl overflow-hidden shadow-xl"
+            >
+              {/* Module Header */}
+              <div className="relative">
+                <div className="relative w-full h-48">
+                  <Image
+                    src={module.thumbnail}
+                    alt={t(module.title)}
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'flex'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 items-center justify-center text-4xl hidden">
+                    {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : module.id === 4 ? '📹' : module.id === 5 ? '📺' : module.id === 6 ? '🛍️' : module.id === 7 ? '📱' : '🚀'}
                   </div>
+                </div>
+                
+                {/* Module Number & Status */}
+                <div className="absolute top-4 left-4 flex items-center gap-2">
+                  <span className="bg-white text-purple-700 px-3 py-1 rounded-full text-sm font-bold">
+                    {t("Module")} {module.id}
+                  </span>
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    {t("Available")}
+                  </span>
+                </div>
 
-                  {/* Tools Preview */}
-                  <div className="px-4 sm:px-6 pb-4">
-                    <div className="flex flex-wrap gap-1">
-                      {module.tools.slice(0, 3).map((tool, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-blue-600 bg-opacity-50 text-blue-100 text-xs rounded">
-                          {tool}
-                        </span>
-                      ))}
-                      {module.tools.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-600 bg-opacity-50 text-gray-300 text-xs rounded">
-                          +{module.tools.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                {/* Play Button Overlay */}
+                {userPaid && (
+                  <div className="absolute inset-0 flex items-center justify-center">
                     <button
-                      className={`w-full py-2 lg:py-3 rounded-lg font-bold text-center text-sm lg:text-base transition-all ${
-                        isLocked 
-                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
-                      }`}
+                      onClick={() => router.push(`/module/${module.id}`)}
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-4 transition-all backdrop-blur-sm"
                     >
-                      {isLocked ? '🔒 ' + t("Unlock Course First") : t("Start Learning →")}
+                      <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
                     </button>
                   </div>
+                )}
+              </div>
 
-                  {/* Lock Overlay */}
-                  {isLocked && (
-                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                      <div className="text-4xl">🔒</div>
-                    </div>
-                  )}
+              {/* Module Content */}
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-3 line-clamp-2">
+                  {t(module.title)}
+                </h3>
+                
+                <p className="text-blue-200 text-sm mb-4 line-clamp-3">
+                  {t(module.description)}
+                </p>
+
+                {/* Module Stats */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-300">{t("Duration")}:</span>
+                    <span className="text-white font-semibold">{t(module.duration)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-300">{t("Estimated Earnings")}:</span>
+                    <span className="text-green-400 font-semibold">{t(module.earnings)}</span>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
 
-          {/* Bottom CTA */}
-          {!userPaid && (
-            <div className="mt-8 lg:mt-16 text-center bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-10">
-              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">{t("Ready to Start?")}</h3>
-              <p className="text-green-200 text-sm lg:text-base mb-4 lg:mb-6 max-w-2xl mx-auto">
-                {t("Get instant access to all 8 modules and start building your AI income streams today!")}
-              </p>
-              <Link href="/checkout">
-                <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all">
-                  {t("Get Started - $15")}
-                </a>
-              </Link>
-            </div>
-          )}
+                {/* Tools */}
+                <div className="mb-4">
+                  <p className="text-gray-300 text-xs mb-2">{t("Tools Covered")}:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {module.tools.map((tool, index) => (
+                      <span
+                        key={index}
+                        className="bg-blue-800 text-blue-200 px-2 py-1 rounded text-xs"
+                      >
+                        {t(tool)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Progress Summary for Paid Users - SIMPLIFIED */}
-          {userPaid && (
-            <div className="mt-8 lg:mt-16 text-center bg-gradient-to-r from-green-900/50 to-blue-900/50 rounded-xl p-6 lg:p-10">
-              <h3 className="text-lg lg:text-2xl font-bold text-white mb-2 lg:mb-4">{t("Your Learning Journey")}</h3>
-              <p className="text-green-200 text-sm lg:text-base mb-4 lg:mb-6 max-w-2xl mx-auto">
-                {t("You have access to all")} {moduleData.length} {t("modules! Start with any module you'd like.")}
-              </p>
-              <Link href="/">
-                <a className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all">
-                  {t("Back to Home")}
-                </a>
-              </Link>
+                {/* Action Button */}
+                {userPaid ? (
+                  <button
+                    onClick={() => router.push(`/module/${module.id}`)}
+                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-3 rounded-lg font-bold transition-all"
+                  >
+                    {t("Start Learning")} →
+                  </button>
+                ) : (
+                  <div className="text-center">
+                    <div className="bg-gray-800 rounded-lg p-3 mb-3">
+                      <p className="text-gray-300 text-sm font-medium">{t("Access Restricted")}</p>
+                      <p className="text-gray-400 text-xs">{t("Purchase the course to unlock all modules")}</p>
+                    </div>
+                    <button
+                      onClick={() => router.push('/checkout')}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-bold transition-all"
+                    >
+                      {t("Purchase Course")} - $25
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          ))}
+        </div>
+
+        {/* Back to Home */}
+        <div className="text-center mt-12">
+          <Link href="/">
+            <a className="text-blue-400 hover:text-blue-300 font-semibold">
+              ← {t("Back to Home")}
+            </a>
+          </Link>
         </div>
       </div>
     </div>

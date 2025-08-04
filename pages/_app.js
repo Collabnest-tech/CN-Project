@@ -3,6 +3,8 @@ import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import DropdownNavbar from '../components/DropdownNavbar'
+import LanguageToggle from '../components/LanguageToggle'
+import { UrduProvider } from '../components/UrduTranslate'
 import { useRouter } from 'next/router'
 
 function MyApp({ Component, pageProps }) {
@@ -20,44 +22,32 @@ function MyApp({ Component, pageProps }) {
   }, [])
 
   useEffect(() => {
-    // ✅ Mobile refresh fix for logo display
-    const handleRouteChange = (url) => {
-      // Check if it's mobile device
-      const isMobile = window.innerWidth <= 768
-      
-      if (isMobile) {
-        // Small delay to ensure page loads, then refresh
-        setTimeout(() => {
-          if (typeof window !== 'undefined') {
-            window.location.reload()
-          }
-        }, 100)
+    const handleRouteChangeComplete = () => {
+      if (typeof window !== 'undefined') {
+        window.scrollTo(0, 0)
       }
     }
 
-    // Listen for route changes
-    router.events.on('routeChangeComplete', handleRouteChange)
-
-    // Cleanup
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange)
-    }
+    router.events.on('routeChangeComplete', handleRouteChangeComplete)
+    return () => router.events.off('routeChangeComplete', handleRouteChangeComplete)
   }, [router])
 
   return (
-    <>
+    <UrduProvider>
       <Head>
         <title>www.collab-nest.com</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="theme-color" content="#10151c" />
         <meta name="description" content="Collab-Nest: AI-powered online courses" />
       </Head>
-      {/* Remove flex row layout */}
+      
+      <LanguageToggle />
       <DropdownNavbar session={session} />
+      
       <div>
         <Component {...pageProps} supabase={supabase} session={session} />
       </div>
-    </>
+    </UrduProvider>
   )
 }
 

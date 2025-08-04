@@ -3,8 +3,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
+import { useUrdu } from './UrduTranslate'
 
 export default function DropdownNavbar({ session }) {
+  const { t } = useUrdu()
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
@@ -86,14 +88,14 @@ export default function DropdownNavbar({ session }) {
           {/* ✅ No auth protection - accessible to everyone */}
           <Link href="/">
             <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
-              Home
+              {t("Home")}
             </a>
           </Link>
           
           {/* ✅ No auth protection - accessible to everyone */}
           <Link href="/courses">
             <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
-              Courses
+              {t("Courses")}
             </a>
           </Link>
           
@@ -102,32 +104,32 @@ export default function DropdownNavbar({ session }) {
             onClick={handleProfileClick}
             className="block w-full text-left px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base"
           >
-            Profile & Referrals
+            {t("Profile & Referrals")}
           </button>
           
           {session ? (
             <>
               <div className="border-t pt-3 sm:pt-4">
-                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Signed in as:</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{t("Signed in as:")}</p>
                 <p className="text-xs sm:text-sm font-semibold text-purple-700 truncate">{session.user.email}</p>
               </div>
               <button
                 onClick={handleSignOut}
                 className="block w-full text-left px-3 sm:px-4 py-2 rounded hover:bg-red-100 text-red-600 font-semibold text-sm sm:text-base"
               >
-                Sign Out
+                {t("Sign Out")}
               </button>
             </>
           ) : (
             <>
               <Link href="/login">
                 <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
-                  Login
+                  {t("Login")}
                 </a>
               </Link>
               <Link href="/register">
                 <a className="block px-3 sm:px-4 py-2 rounded hover:bg-purple-100 text-purple-700 font-semibold text-sm sm:text-base" onClick={() => setOpen(false)}>
-                  Sign Up
+                  {t("Sign Up")}
                 </a>
               </Link>
             </>

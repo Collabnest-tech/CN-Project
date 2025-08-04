@@ -5,8 +5,10 @@ import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { moduleData } from '../lib/moduleData'
 import { useSwipeable } from 'react-swipeable'
+import { useUrdu } from '../components/UrduTranslate'
 
 export default function Home() {
+  const { t } = useUrdu()
   const router = useRouter()
   const [session, setSession] = useState(null)
   const [userPaid, setUserPaid] = useState(false)
@@ -19,14 +21,14 @@ export default function Home() {
     checkSession()
     checkAuthentication()
 
-    // ✅ Reset carousel to first slide when returning to homepage
+    // Reset carousel to first slide when returning to homepage
     setCurrent(0)
 
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % carouselItems.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [router.asPath]) // ✅ Add router.asPath as dependency
+  }, [router.asPath])
 
   const checkSession = async () => {
     try {
@@ -88,27 +90,27 @@ export default function Home() {
 
   const carouselItems = [
     {
-      title: "While Others Hesitate, Fortunes Are Being Made",
-      description: "Every day you wait, someone else is building their AI-powered income stream. The early adopters are already pulling ahead.",
-      img: "/fortune-makers.jpg", // ✅ Place image in public/ folder
+      title: t("While Others Hesitate, Fortunes Are Being Made"),
+      description: t("Every day you wait, someone else is building their AI-powered income stream. The early adopters are already pulling ahead."),
+      img: "/fortune-makers.jpg",
       icon: "🏆"
     },
     {
-      title: "The Opportunity That Only Comes Once",
-      description: "Just like the internet boom of the 90s, AI is creating a new class of entrepreneurs. The window is still open, but not for long.",
-      img: "/opportunity-window.jpg", // ✅ Place image in public/ folder
+      title: t("The Opportunity That Only Comes Once"),
+      description: t("Just like the internet boom of the 90s, AI is creating a new class of entrepreneurs. The window is still open, but not for long."),
+      img: "/opportunity-window.jpg",
       icon: "⏰"
     },
     {
-      title: "Success Stories Are Being Written Right Now", 
-      description: "People with no technical background are earning thousands monthly. They started where you are today - curious and ready to learn.",
-      img: "/success-stories.jpg", // ✅ Place image in public/ folder
+      title: t("Success Stories Are Being Written Right Now"), 
+      description: t("People with no technical background are earning thousands monthly. They started where you are today - curious and ready to learn."),
+      img: "/success-stories.jpg",
       icon: "📈"
     },
     {
-      title: "The Skills That Separate the Successful",
-      description: "While most people struggle with traditional methods, our students master AI tools that multiply their productivity and income potential.",
-      img: "/skill-advantage.jpg", // ✅ Place image in public/ folder
+      title: t("The Skills That Separate the Successful"),
+      description: t("While most people struggle with traditional methods, our students master AI tools that multiply their productivity and income potential."),
+      img: "/skill-advantage.jpg",
       icon: "🧠"
     }
   ]
@@ -122,7 +124,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#10151c] via-[#1a2230] to-[#232a39] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">{t("Loading...")}</div>
       </div>
     )
   }
@@ -153,8 +155,8 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">🎉</span>
               <div>
-                <h3 className="text-green-200 font-bold">Great news! You have a $5 discount!</h3>
-                <p className="text-green-300 text-sm">Referral code "{router.query.ref.toUpperCase()}" applied</p>
+                <h3 className="text-green-200 font-bold">{t("Great news! You have a $5 discount!")}</h3>
+                <p className="text-green-300 text-sm">{t("Referral code")} "{router.query.ref.toUpperCase()}" {t("applied")}</p>
               </div>
             </div>
           </div>
@@ -164,22 +166,22 @@ export default function Home() {
         <div className="text-center mb-8 lg:mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             <div className="bg-gradient-to-r from-amber-900 to-red-900 rounded-xl p-6 lg:p-8 border-l-4 border-yellow-400">
-              <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">📊 Market Alert</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">📊 {t("Market Alert")}</h2>
               <p className="text-sm lg:text-base text-amber-200 mb-3">
-                The AI revolution is accelerating faster than experts predicted. Early adopters who started 6 months ago are already earning 5-figure monthly incomes.
+                {t("The AI revolution is accelerating faster than experts predicted. Early adopters who started 6 months ago are already earning 5-figure monthly incomes.")}
               </p>
               <p className="text-lg lg:text-xl font-bold text-yellow-300">
-                The question isn't if AI will change everything - it's whether you'll be prepared when it does.
+                {t("The question isn't if AI will change everything - it's whether you'll be prepared when it does.")}
               </p>
             </div>
 
             <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 lg:p-8">
-              <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">Who We Are & Why This Matters</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">{t("Who We Are & Why This Matters")}</h2>
               <p className="text-sm lg:text-base text-blue-200 mb-3">
-                We're not just another online course company. Our team includes a <strong>Software Developer from Durham University</strong> and a <strong>Senior Project Manager</strong> who have witnessed firsthand how AI is reshaping entire industries.
+                {t("We're not just another online course company. Our team includes a")} <strong>{t("Software Developer from Durham University")}</strong> {t("and a")} <strong>{t("Senior Project Manager")}</strong> {t("who have witnessed firsthand how AI is reshaping entire industries.")}
               </p>
               <p className="text-sm lg:text-base text-blue-300">
-                Our mission goes beyond education - we're building pathways out of financial uncertainty through practical AI skills that are in massive demand right now.
+                {t("Our mission goes beyond education - we're building pathways out of financial uncertainty through practical AI skills that are in massive demand right now.")}
               </p>
             </div>
           </div>
@@ -190,14 +192,13 @@ export default function Home() {
           {/* Left Column */}
           <div className="text-center lg:text-left">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-4 lg:mb-6 text-white leading-tight">
-              While Most People Wonder<br />
+              {t("While Most People Wonder")}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                "What If?"
+                {t("What If?")}
               </span>
             </h1>
             <p className="text-base lg:text-lg text-blue-200 mb-6 lg:mb-8 font-medium leading-relaxed">
-              Smart individuals are already building automated income streams with AI tools. 
-              The gap between those who act and those who wait is widening every day.
+              {t("Smart individuals are already building automated income streams with AI tools. The gap between those who act and those who wait is widening every day.")}
             </p>
             
             {/* Social Proof */}
@@ -205,26 +206,26 @@ export default function Home() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-xl lg:text-2xl font-bold text-green-400">5,247</div>
-                  <div className="text-xs lg:text-sm text-gray-300">Students Learning</div>
+                  <div className="text-xs lg:text-sm text-gray-300">{t("Students Learning")}</div>
                 </div>
                 <div>
                   <div className="text-xl lg:text-2xl font-bold text-blue-400">$847K</div>
-                  <div className="text-xs lg:text-sm text-gray-300">Student Earnings</div>
+                  <div className="text-xs lg:text-sm text-gray-300">{t("Student Earnings")}</div>
                 </div>
                 <div>
                   <div className="text-xl lg:text-2xl font-bold text-purple-400">94%</div>
-                  <div className="text-xs lg:text-sm text-gray-300">See Results</div>
+                  <div className="text-xs lg:text-sm text-gray-300">{t("See Results")}</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Right Column - Simplified Pricing */}
-          {!userPaid && ( // ✅ Only show pricing box if user hasn't paid
+          {!userPaid && (
           <div className="lg:ml-8">
             <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-8 mb-6">
               <div className="text-center">
-                <p className="text-green-200 mb-3 text-sm lg:text-base">Investment in Your Future:</p>
+                <p className="text-green-200 mb-3 text-sm lg:text-base">{t("Investment in Your Future:")}</p>
                 <div className="text-3xl lg:text-4xl font-bold text-white mb-3">
                   {hasReferral && (
                     <span className="line-through text-gray-400 text-lg lg:text-xl">${basePrice}</span>
@@ -234,13 +235,13 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-green-200 mb-4 text-sm lg:text-base">
-                  One-time payment • Lifetime access
+                  {t("One-time payment")} • {t("Lifetime access")}
                 </p>
                 
                 {hasReferral && (
                   <div className="mb-4 p-3 bg-green-800 rounded-lg">
                     <p className="text-green-200 text-sm">
-                      🎉 $5 discount applied with referral code!
+                      🎉 $5 {t("discount applied with referral code!")}
                     </p>
                   </div>
                 )}
@@ -254,35 +255,35 @@ export default function Home() {
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors w-full"
               >
                 {authChecking ? (
-                  'Loading...'
+                  t("Loading...")
                 ) : isAuthenticated ? (
-                  `Get Started Now - $${displayPrice}`
+                  `${t("Get Started Now")} - $${displayPrice}`
                 ) : (
-                  `Sign In to Purchase - $${displayPrice}`
+                  `${t("Sign In to Purchase")} - $${displayPrice}`
                 )}
               </button>
               <Link href="/courses">
                 <a className="block border-2 border-blue-400 hover:bg-blue-400 hover:bg-opacity-20 text-blue-300 hover:text-white px-6 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all text-center">
-                  Explore What's Inside
+                  {t("Explore What's Inside")}
                 </a>
               </Link>
             </div>
           </div>
           )}
 
-          {/* ✅ Show welcome message for paid users */}
+          {/* Show welcome message for paid users */}
           {userPaid && (
             <div className="lg:ml-8">
               <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 lg:p-8 mb-6">
                 <div className="text-center">
                   <div className="text-4xl mb-4">🎉</div>
-                  <h2 className="text-2xl font-bold text-white mb-3">Welcome Back!</h2>
+                  <h2 className="text-2xl font-bold text-white mb-3">{t("Welcome Back!")}</h2>
                   <p className="text-green-200 mb-6 text-sm lg:text-base">
-                    You're already part of our AI Mastery community. Continue your journey and unlock your potential!
+                    {t("You're already part of our AI Mastery community. Continue your journey and unlock your potential!")}
                   </p>
                   <Link href="/courses">
                     <a className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block">
-                      Continue Learning
+                      {t("Continue Learning")}
                     </a>
                   </Link>
                 </div>
@@ -291,26 +292,26 @@ export default function Home() {
           )}
         </div>
 
-        {/* ✅ Referral Program Info - Moved above carousel */}
+        {/* Referral Program Info */}
         <div className="mb-8 lg:mb-12 p-4 bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/20 rounded-xl text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <span className="text-2xl">💰</span>
-            <h4 className="text-green-300 font-bold text-lg">Referral Program</h4>
+            <h4 className="text-green-300 font-bold text-lg">{t("Referral Program")}</h4>
             <span className="text-2xl">💰</span>
           </div>
           
           <div className="space-y-2 mb-4">
             <p className="text-green-200 text-sm">
-              🎉 <span className="font-semibold">Friends get $5 OFF</span> with your referral code!
+              🎉 <span className="font-semibold">{t("Friends get $5 OFF")}</span> {t("with your referral code!")}
             </p>
             <p className="text-blue-200 text-xs">
-              💸 <span className="font-semibold">You earn $5</span> for each successful referral
+              💸 <span className="font-semibold">{t("You earn $5")}</span> {t("for each successful referral")}
             </p>
           </div>
           
           <div className="bg-blue-900/40 rounded-lg p-3">
             <p className="text-blue-200 text-sm">
-              💡 <span className="font-semibold">Get your referral link:</span> Go to Profile & Referrals to generate your unique code
+              💡 <span className="font-semibold">{t("Get your referral link:")}</span> {t("Go to Profile & Referrals to generate your unique code")}
             </p>
           </div>
         </div>
@@ -330,7 +331,7 @@ export default function Home() {
                   </p>
                 </div>
                 
-                {/* ✅ Fixed Image Container - Use key to force re-render */}
+                {/* Fixed Image Container */}
                 <div className="order-first lg:order-last">
                   <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
                     <img
@@ -382,10 +383,10 @@ export default function Home() {
         {/* Module Showcase */}
         <div className="mb-8 lg:mb-12">
           <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-center text-white mb-3 lg:mb-4">
-            What Successful Students Are Learning
+            {t("What Successful Students Are Learning")}
           </h2>
           <p className="text-center text-blue-200 mb-6 lg:mb-8 text-sm lg:text-base">
-            These aren't just lessons - they're the exact strategies our students use to build income streams
+            {t("These aren't just lessons - they're the exact strategies our students use to build income streams")}
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
@@ -410,8 +411,8 @@ export default function Home() {
                       {module.id === 1 ? '🤖' : module.id === 2 ? '✍️' : module.id === 3 ? '🎬' : '🛍️'}
                     </div>
                   </div>
-                  <h3 className="text-base lg:text-lg font-bold text-white mb-2">{module.title}</h3>
-                  <p className="text-blue-200 text-xs lg:text-sm mb-3 line-clamp-3">{module.description}</p>
+                  <h3 className="text-base lg:text-lg font-bold text-white mb-2">{t(module.title)}</h3>
+                  <p className="text-blue-200 text-xs lg:text-sm mb-3 line-clamp-3">{t(module.description)}</p>
                   <div className="text-green-400 text-xs lg:text-sm font-semibold">
                     {module.earnings}
                   </div>
@@ -423,7 +424,7 @@ export default function Home() {
           <div className="text-center mt-6 lg:mt-8">
             <Link href="/courses">
               <a className="text-blue-400 hover:text-blue-300 font-semibold text-sm lg:text-base">
-                See All 8 Income-Generating Modules →
+                {t("See All 8 Income-Generating Modules")} →
               </a>
             </Link>
           </div>
@@ -433,20 +434,19 @@ export default function Home() {
         {!userPaid && (
           <div className="text-center bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl p-6 lg:p-8 mb-8 lg:mb-12">
             <h2 className="text-xl lg:text-2xl xl:text-3xl font-bold text-white mb-3 lg:mb-4">
-              Your Future Self Is Waiting
+              {t("Your Future Self Is Waiting")}
             </h2>
             <p className="text-sm lg:text-base text-blue-200 mb-4 lg:mb-6 max-w-2xl mx-auto">
-              Every skill you don't learn, every opportunity you don't explore, every day you postpone - 
-              someone else is moving ahead. But it's never too late to start.
+              {t("Every skill you don't learn, every opportunity you don't explore, every day you postpone - someone else is moving ahead. But it's never too late to start.")}
             </p>
             <button
               onClick={handlePurchase}
               className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 lg:px-12 py-3 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all"
             >
-              Begin Your Transformation - ${displayPrice}
+              {t("Begin Your Transformation")} - ${displayPrice}
             </button>
             <p className="text-green-300 text-xs lg:text-sm mt-3 lg:mt-4">
-              ✓ Lifetime Access ✓ Start Immediately ✓ Expert Support ✓ Real Results
+              ✓ {t("Lifetime Access")} ✓ {t("Start Immediately")} ✓ {t("Expert Support")} ✓ {t("Real Results")}
             </p>
           </div>
         )}
@@ -454,16 +454,16 @@ export default function Home() {
         {/* Contact Section */}
         <div className="mt-12 lg:mt-16 pt-8 lg:pt-12 border-t border-gray-700">
           <div className="text-center">
-            <h3 className="text-lg lg:text-xl font-bold text-white mb-4">Need Support?</h3>
+            <h3 className="text-lg lg:text-xl font-bold text-white mb-4">{t("Need Support?")}</h3>
             <p className="text-blue-200 text-sm lg:text-base mb-6">
-              Have questions about the course or need assistance? We're here to help!
+              {t("Have questions about the course or need assistance? We're here to help!")}
             </p>
             
             <div className="bg-gradient-to-r from-green-900 to-blue-900 rounded-xl p-6 inline-block">
               <div className="flex items-center justify-center gap-3">
                 <div className="text-2xl">📱</div>
                 <div className="text-left">
-                  <p className="text-white font-semibold text-sm lg:text-base">WhatsApp Support</p>
+                  <p className="text-white font-semibold text-sm lg:text-base">{t("WhatsApp Support")}</p>
                   <a 
                     href="https://wa.me/447547131573" 
                     target="_blank" 
@@ -475,12 +475,12 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-blue-200 text-xs lg:text-sm mt-2">
-                Available Monday - Friday, 9 AM - 6 PM GMT
+                {t("Available Monday - Friday, 9 AM - 6 PM GMT")}
               </p>
             </div>
             
             <p className="text-gray-400 text-xs lg:text-sm mt-6">
-              © 2025 Collab-Nest. All rights reserved.
+              © 2025 Collab-Nest. {t("All rights reserved.")}
             </p>
           </div>
         </div>
